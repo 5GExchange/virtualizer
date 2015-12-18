@@ -97,6 +97,9 @@ class Yang(object):
         root = self._et(None, False, ordered)
         return ET.tostring(root, encoding="utf8", method="html")
 
+    def html(self, ordered=True):
+        return self.get_as_text()
+
     def _parse(self, parent, root):
         """
         Abstract method to create classes from XML string
@@ -252,7 +255,8 @@ class Yang(object):
         Overide str methor to dump the class subtree as XML string
         :return: string
         """
-        return self.xml()
+        # return self.xml()
+        return self.get_as_text()
 
     def contains_operation(self, operation="delete"):  # FIXME: rename has_operation()
         """
@@ -305,6 +309,8 @@ class Yang(object):
         :param other: instance of Yang
         :return: boolean
         """
+        if other is None:
+            return False
         eq = True
         # Check attributes
         self_atribs = self.__dict__
@@ -478,17 +484,20 @@ class Leaf(Yang):
         self.units = ""
         """:type: string"""
 
-    def get_as_text(self):
-        """
-        Abstract method to get data as text
-        """
-        pass
-
     def get_value(self):
         """
         Abstract method to get data value
         """
-        pass
+        return self.data
+
+    def get_as_text(self):
+        """
+        Returns data value as text
+        :param: -
+        :return: string
+        """
+        return str(self.data)
+
 
     def set_value(self, value):
         """
@@ -547,7 +556,7 @@ class Leaf(Yang):
                 parent.append(self.data)
             else:
                 e_data = ET.SubElement(parent, self.get_tag())
-                e_data.text = self.get_as_text()+self.get_units()
+                e_data.text = self.get_as_text() + self.get_units()
         return parent
 
     def clear_data(self):
@@ -645,22 +654,16 @@ class StringLeaf(Leaf):
             return ET.tostring(self.data, encoding="us-ascii", method="text")
         return self.data
 
-    def get_value(self):
-        """
-        Returns data value
-        :param: -
-        :return: string
-        """
-        return self.data
-
     def set_value(self, value):
         """
         Sets data value
         :param value: string
         :return: -
         """
-        self.data = value
-
+        if value is not None:
+            self.data = str(value)
+        else:
+            self.data= value
 
 class IntLeaf(Leaf):
     """
@@ -710,16 +713,6 @@ class IntLeaf(Leaf):
             root.remove(e_data)
             self.initialized = True
 
-    def get_as_text(self):
-        """
-        Returns data value as text
-        :param: -
-        :return: string
-        """
-        if type(self.data) == ET:
-            return ET.tostring(self.data, encoding="us-ascii", method="text")
-        return str(self.data)
-
     def get_value(self):
         """
         Returns data value
@@ -734,6 +727,9 @@ class IntLeaf(Leaf):
         :param value: int
         :return: -
         """
+        if value is None:
+            self.data = value
+            return
         if type(value) is not int:
             try:
                 value = int(value)
@@ -795,23 +791,6 @@ class Decimal64Leaf(Leaf):
             root.remove(e_data)
             self.initialized = True
 
-    def get_as_text(self):
-        """
-        Returns data value as text
-        :param: -
-        :return: string
-        """
-        if type(self.data) == ET:
-            return ET.tostring(self.data, encoding="us-ascii", method="text")
-        return str(self.data)
-
-    def get_value(self):
-        """
-        Returns data value
-        :param: -
-        :return: decimal
-        """
-        return self.data
 
     def set_value(self, value):
         """
@@ -883,17 +862,8 @@ class BooleanLeaf(Leaf):
         :param: -
         :return: string
         """
-        if type(self.data) == ET:
-            return ET.tostring(self.data, encoding="us-ascii", method="text")
         return str(self.data).lower()
 
-    def get_value(self):
-        """
-        Returns data value
-        :param: -
-        :return: int
-        """
-        return self.data
 
     def set_value(self, value):
         """
@@ -1050,7 +1020,7 @@ class ListedYang(Yang):
         """
         key_values = self.keys()
         if key_values is None:
-            raise KeyError("List entry without key value: " + self.get_as_text())
+            raise KeyError("List entry without key value: " + self.get_as_text)
         key_tags = self.get_key_tags()
         if type(key_tags) is tuple:
             s = ', '.join('%s=%s' % t for t in zip(key_tags, key_values))
