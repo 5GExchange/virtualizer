@@ -25,9 +25,20 @@ module virtualizer4 {
     }
   }
 
-  typedef metadata {
-    type string;
-  }
+  grouping metadata {
+    list metadata {
+      min-elements 0;
+      key key;
+      leaf key{
+        type string;
+	    mandatory true;
+	  }
+	  leaf value{
+        type string;
+	     mandatory false;
+      }
+    }
+  } 
 
   // ------------ PORTS -------
   grouping port {
@@ -36,7 +47,7 @@ module virtualizer4 {
     leaf port_type {type string;}
     leaf capability { type string;}
     leaf sap {type string;}
-    leaf metadata {mandatory false; type string;}
+    uses metadata;
   }
 
   // ------------ FLOW CONTROLS -------
@@ -139,7 +150,6 @@ module virtualizer4 {
   grouping node {
     description "Any node: infrastructure or NFs";
     uses id-name-type;
-    leaf metadata {mandatory false; type string;}
     container ports {
       list port{
         key "id";
@@ -150,6 +160,7 @@ module virtualizer4 {
     container resources{
       uses software-resource;
     }
+    uses metadata;
   }
 
   grouping nodes {
