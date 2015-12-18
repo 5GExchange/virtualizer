@@ -1,4 +1,4 @@
-#    Filename: virtualizer4.py		 Created: 2015-12-18  17:09:41
+#    Filename: virtualizer4.py		 Created: 2015-12-18  18:02:31
 #    This file was automatically created by a pyang plugin (PNC) developed at Ericsson Hungary Ltd., 2015
 #    Authors: Robert Szabo, Balazs Miriszlai, Akos Recse, Raphael Vicente Rosa
 #    Credits: Robert Szabo, Raphael Vicente Rosa, David Jocha, Janos Elek, Balazs Miriszlai, Akos Recse
@@ -108,6 +108,7 @@ class GroupingLink_resource(Yang):
 
 # YANG construct: grouping flowentry
 class GroupingFlowentry(GroupingId_name):
+    """The flowentry syntax will follow ovs-ofctrl string format. The UNIFY general tagging mechanism will be use like 'mpls'-> 'tag', i.e., push_tag:tag; pop_tag:tag..."""
     def __init__(self, tag, parent=None, id=None, name=None, priority=None, port=None, match=None, action=None, out=None, resources=None):
         GroupingId_name.__init__(self, tag, parent, id, name)
         self._sorted_children = ["id", "name", "priority", "port", "match", "action", "out", "resources"]

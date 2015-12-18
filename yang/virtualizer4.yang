@@ -63,6 +63,7 @@ module virtualizer4 {
   }
 
   grouping flowentry {
+    description "The flowentry syntax will follow ovs-ofctrl string format. The UNIFY general tagging mechanism will be use like 'mpls'-> 'tag', i.e., push_tag:tag; pop_tag:tag...";
     uses id-name;
     leaf priority {
       type string;
@@ -74,10 +75,12 @@ module virtualizer4 {
       mandatory true;
     }
     leaf match {
+      description "The match syntax will follow ovs-ofctrl string format with 'mpls'->'tag', e.g.,: in_port=port, dl_tag=A, where port is the leafref above";
       type string;
       mandatory true;
     }
     leaf action {
+      description "The action syntax will follow ovs-ofctrl string format with 'mpls'->'tag', e.g.,: push_tag:A, set_tag_label:A, output:out, where out is the leafref below";
       type string;
       mandatory true;
     }
