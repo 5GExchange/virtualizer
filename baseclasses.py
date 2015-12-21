@@ -222,6 +222,24 @@ class Yang(object):
         temp._parse(parent, root)
         return temp
 
+    @classmethod
+    def parse_from_file(cls, filename):
+        try:
+            tree = ET.parse(filename)
+            return cls.parse(root=tree.getroot())
+        except ET.ParseError as e:
+            raise Exception('XML file ParseError: %s' % e.message)
+            return None
+
+    @classmethod
+    def parse_from_text(cls, text):
+         try:
+             tree = ET.ElementTree(ET.fromstring(text))
+             return cls.parse(root=tree.getroot())
+         except ET.ParseError as e:
+            raise Exception('XML Text ParseError: %s' % e.message)
+            return None
+
     def _et(self, node, inherited=False, ordered=True):
         """
         Inserts node as subelement of current ElementTree or create a new tree if it is not initialized
@@ -644,12 +662,14 @@ class StringLeaf(Leaf):
                 self.set_value(e_data.text)
             root.remove(e_data)
 
-    def get_as_text(self):
+    def get_as_text(self, default=None):
         """
         Returns data value as text
         :param: -
         :return: string
         """
+        if self.data is None and default is not None:
+            return default
         if type(self.data) == ET:
             return ET.tostring(self.data, encoding="us-ascii", method="text")
         return self.data
@@ -1204,6 +1224,9 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         :param node: ElementTree
         :return: ElementTree
         """
+        if node is None:
+            node = ET.Element(self.get_tag())
+
         if ordered:
             ordered_keys = sorted(self.keys())
             for k in ordered_keys:
