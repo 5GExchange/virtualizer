@@ -45,6 +45,7 @@ class Yang(object):
         self._operation = None
         self._referred = [] # to hold leafref references for backward search
         self._sorted_children = [] # to hold children Yang list
+        self._attributes = ['_operation']
 
     def get_parent(self):
         """
@@ -243,15 +244,19 @@ class Yang(object):
     def _et(self, node, inherited=False, ordered=True):
         """
         Inserts node as subelement of current ElementTree or create a new tree if it is not initialized
-        param node: reference to the node element 
+        param node: reference to the node element
         return: Element of ElementTree
         """
         _prohibited = ["_tag", "_sorted_children", "_key_attributes", "_referred"]
         attribs = {}
-        for key, item in self.__dict__.items():
-            if not isinstance(item, Yang):
-                if item is not None and key not in _prohibited:
-                    attribs[key.translate(None, '_')] = item
+        # for key, item in self.__dict__.items():
+        #     if not isinstance(item, Yang):
+        #         if item is not None and key not in _prohibited:
+        #             attribs[key.translate(None, '_')] = item
+
+        for a in self._attributes:
+            if self.__dict__[a] is not None:
+                attribs[a.translate(None, '_')] = str(self.__dict__[a])
 
         if self.is_initialized():
             if node is not None:
