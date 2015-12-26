@@ -34,6 +34,7 @@ import copy
 from types import *
 from decimal import *
 from collections import OrderedDict, Iterable
+import StringIO
 
 class Yang(object):
     """
@@ -47,6 +48,34 @@ class Yang(object):
         self._sorted_children = [] # to hold children Yang list
         self._attributes = ['_operation']
 
+    def get_next(self, children=None):
+        """
+        Returns the next Yang element followed by the one called for. It can be used for in-depth traversar of the yang tree.
+        :param children: Yang (for up level call to hand over the callee children)
+        :return: Yang
+        """
+        i = 0
+        if len(self._sorted_children) > 0:
+            if children is None:
+                while i < len(self._sorted_children):
+                    if (self.__dict__[self._sorted_children[i]] is not None) and \
+                        (self.__dict__[self._sorted_children[i]].is_initialized()):
+                        return self.__dict__[self._sorted_children[i]]
+                    i += 1
+            else:
+                while i < len(self._sorted_children):
+                    i += 1
+                    if self.__dict__[self._sorted_children[i-1]] == children:
+                        break
+                while i < len(self._sorted_children):
+                    if (self.__dict__[self._sorted_children[i]] is not None) and \
+                        (self.__dict__[self._sorted_children[i]].is_initialized()):
+                        return self.__dict__[self._sorted_children[i]]
+                    i += 1
+        if self._parent is None:
+            return None
+        return self._parent.get_next(self)
+        
     def get_parent(self):
         """
         Returns the parent in the class subtree.
@@ -99,7 +128,38 @@ class Yang(object):
         return ET.tostring(root, encoding="utf8", method="html")
 
     def html(self, ordered=True):
-        return self.get_as_text()
+        """
+        Dump the class subtree as HTML pretty formatted string
+        :return: string
+        """
+        def indent(elem, level=0):
+            i = "\n" + level*"  "
+            if len(elem):
+                if not elem.text or not elem.text.strip():
+                    elem.text = i + "  "
+                if not elem.tail or not elem.tail.strip():
+                    elem.tail = i
+                for elem in elem:
+                    indent(elem, level+1)
+                if not elem.tail or not elem.tail.strip():
+                    elem.tail = i
+            else:
+                if level and (not elem.tail or not elem.tail.strip()):
+                    elem.tail = i
+
+        root = self._et(None, False, ordered)
+        indent(root)
+
+        output = StringIO.StringIO()
+        if not isinstance(root, ET.ElementTree):
+            root = ET.ElementTree(root)
+
+        root.write(output)
+        if output.buflist[-1] == '\n':
+            output.buflist.pop()
+        html = output.getvalue()
+        output.close()
+        return html
 
     def _parse(self, parent, root):
         """
@@ -241,35 +301,37 @@ class Yang(object):
             raise Exception('XML Text ParseError: %s' % e.message)
             return None
 
+    def _et_attribs(self):
+        attribs = {}
+        for a in self._attributes:
+            if self.__dict__[a] is not None:
+                attribs[a.translate(None, '_')] = str(self.__dict__[a])
+        return attribs
+
     def _et(self, node, inherited=False, ordered=True):
         """
-        Inserts node as subelement of current ElementTree or create a new tree if it is not initialized
+        Inserts children and current nodes recursively as subelements of current ElementTree or create a new tree if it is not initialized;
         param node: reference to the node element
         return: Element of ElementTree
         """
         _prohibited = ["_tag", "_sorted_children", "_key_attributes", "_referred"]
-        attribs = {}
-        # for key, item in self.__dict__.items():
-        #     if not isinstance(item, Yang):
-        #         if item is not None and key not in _prohibited:
-        #             attribs[key.translate(None, '_')] = item
-
-        for a in self._attributes:
-            if self.__dict__[a] is not None:
-                attribs[a.translate(None, '_')] = str(self.__dict__[a])
-
+        # attribs = {}
+        # for a in self._attributes:
+        #     if self.__dict__[a] is not None:
+        #         attribs[a.translate(None, '_')] = str(self.__dict__[a])
+        #
         if self.is_initialized():
             if node is not None:
-                node = ET.SubElement(node, self.get_tag(), attrib=attribs)
+                node = ET.SubElement(node, self.get_tag(), attrib=self._et_attribs())
             else:
-                node = ET.Element(self.get_tag(), attrib=attribs)
+                node = ET.Element(self.get_tag(), attrib=self._et_attribs())
             if len(self._sorted_children) > 0:
                 for c in self._sorted_children:
                     if self.__dict__[c] is not None:
                         self.__dict__[c]._et(node, inherited, ordered)
         else:
             if node is None:
-                node = ET.Element(self.get_tag(), attrib=attribs)
+                node = ET.Element(self.get_tag(), attrib=self._et_attribs())
 
         return node
 
@@ -568,19 +630,26 @@ class Leaf(Yang):
             return True
         return False
 
-    def _et(self, parent, inherited=False, ordered=True):
+    def _et(self, node, inherited=False, ordered=True):
         """
         Overides Yang method return parent with subelement as leaf tag and data as text if it is initialized
         :param parent: ElementTree
         :return: Element of ElementTree
         """
         if self.is_initialized():
-            if type(self.data) is ET.Element:
-                parent.append(self.data)
+            if node is None:
+                if type(self.data) is ET.Element:
+                    return self.data
+                else:
+                    node = ET.Element(self.get_tag(), attrib=self._et_attribs())
+                    node.text = self.get_as_text() + self.get_units()
             else:
-                e_data = ET.SubElement(parent, self.get_tag())
-                e_data.text = self.get_as_text() + self.get_units()
-        return parent
+                if type(self.data) is ET.Element:
+                    node.append(self.data)
+                else:
+                    e_data = ET.SubElement(node, self.get_tag(), attrib=self._et_attribs())
+                    e_data.text = self.get_as_text() + self.get_units()
+        return node
 
     def clear_data(self):
         """
@@ -1095,6 +1164,30 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         super(ListYang, self).__init__(tag, parent)
         self._data = OrderedDict()
         self._type = type
+
+    def get_next(self, children=None):
+        """
+        Overrides Yang method. Returns the next Yang element followed by the one called for. It can be used for in-depth traversar of the yang tree.
+        :param children: Yang (for up level call to hand over the callee children)
+        :return: Yang
+        """
+        if children is None:
+            # return first key
+            for key in self._data: return self._data[key]
+            # go to parent
+            if self._parent is not None:
+                return self._parent.get_next(self)
+            else:
+                return None
+        else:
+            # pretty tricky internal dic access, see http://stackoverflow.com/questions/12328184/how-to-get-the-next-item-in-an-ordereddict
+            next = self._data._OrderedDict__map[children.keys()][1]
+            if next is self._data._OrderedDict__root:
+                if self._parent is not None:
+                    return self._parent.get_next(self)
+                else:
+                    return None
+            return self._data[next[2]]
 
     def get_type(self):
         """
