@@ -35,6 +35,15 @@ from types import *
 from decimal import *
 from collections import OrderedDict, Iterable
 import StringIO
+import os
+
+__EDIT_OPERATION_TYPE_ENUMERATION__ = [  # see https://tools.ietf.org/html/rfc6241#section-7.2
+    "merge",  # default operation
+    "replace",
+    "create",
+    "delete",
+    "remove"
+]
 
 class Yang(object):
     """
@@ -44,9 +53,21 @@ class Yang(object):
         self._parent = parent
         self._tag = tag
         self._operation = None
-        self._referred = [] # to hold leafref references for backward search
-        self._sorted_children = [] # to hold children Yang list
+        self._referred = []  # to hold leafref references for backward search
+        self._sorted_children = []  # to hold children Yang list
         self._attributes = ['_operation']
+
+    def __setattr__(self, key, value):
+        """
+        Calls set_value() for Leaf types so that they behave like string, int etc...
+        :param key: string, attribute name
+        :param value: value of arbitrary type
+        :return: -
+        """
+        if (value is not None) and (key in self.__dict__) and issubclass(type(self.__dict__[key]), Leaf) and not issubclass(type(value), Yang):
+            self.__dict__[key].set_value(value)
+        else:
+            self.__dict__[key]= value
 
     def get_next(self, children=None):
         """
@@ -161,6 +182,24 @@ class Yang(object):
         output.close()
         return html
 
+    def write_to_file(self, outfilename, format="html"):
+        """
+        Writes Yang tree to a file; path is created on demand
+        :param outfilename: string
+        :param format: string ("html", "xml", "text"), default is "html"
+        :return: -
+        """
+        if not os.path.exists(os.path.dirname(outfilename)):
+            os.makedirs(os.path.dirname(outfilename))
+        text = self.html()
+        if format=="text":
+            text= self.get_as_text()
+        elif format=="xml":
+            text= self.xml()
+        with open(outfilename, 'w') as outfile:
+            outfile.writelines(text)
+
+
     def _parse(self, parent, root):
         """
         Abstract method to create classes from XML string
@@ -175,6 +214,7 @@ class Yang(object):
         Delete instances which equivalently exist in the reference tree.
         The call is recursive, a node is removed if and only if all of its children are removed.
         :param reference: Yang
+        :param ignores: tuple of attribute names not to use during the compare operation
         :return: True if object to be removed otherwise False
         """
         _reduce = True
@@ -187,7 +227,7 @@ class Yang(object):
         for k, v in self.__dict__.items():
             # if hasattr(v, "mandatory") and v.get_mandatory() is True:
             #     _ignores.append(k)
-            if type(self._parent) is ListYang: # todo: move this outside
+            if type(self._parent) is ListYang:  # todo: move this outside
                 if k == self.keys():
                     _ignores.append(k)
             if k not in _ignores:
@@ -343,6 +383,29 @@ class Yang(object):
         # return self.xml()
         return self.get_as_text()
 
+    def has_operation(self, operation):
+        """
+        Return True if instance's operation value is in the list of operation values
+        :param operation: string or tuple of strings
+        :return: boolean
+        """
+        # if (self._operation is None) or (operation is None):
+        #     return False
+
+        if isinstance(operation, (tuple, list, set)):
+            for op in operation:
+                if (op is not None) and (op not in __EDIT_OPERATION_TYPE_ENUMERATION__):
+                    raise ValueError("has_operation(): Illegal operation value={op} out of {operation}".format(op=op, operation=operation))
+            if self._operation in operation:
+                return True
+            return False
+        if (operation is not None) and (not operation is __EDIT_OPERATION_TYPE_ENUMERATION__):
+            raise ValueError("has_operation(): Illegal operation value={operation}".format(operation=operation))
+        if self._operation == operation:
+            return True
+        return False
+
+
     def contains_operation(self, operation="delete"):  # FIXME: rename has_operation()
         """
         Verifies if the instance contains operation set for any of its attributes
@@ -365,16 +428,22 @@ class Yang(object):
         """
         return self._operation
 
-    def set_operation(self, operation="delete"):
+    def set_operation(self, operation, recursive=True, force=True):
         """
         Defines operation for instance
         :param operation: string
+        :param recursive: boolean, default is True; determines if children operations are also set or not
+        :param force: boolean, determines if overwrite of attribute is enforced (True) or not
         :return: -
         """
-        self._operation = operation
-        for k, v in self.__dict__.items():
-            if isinstance(v, Yang) and k is not "_parent":
-                v.set_operation(operation)
+        if operation not in __EDIT_OPERATION_TYPE_ENUMERATION__:
+            raise ValueError("Illegal operation value: operation={operation} at {yang}".replace(operation=operation, yang=self.get_as_text()))
+        if force or (self._operation is None):
+            self._operation = operation
+        if recursive:
+            for k, v in self.__dict__.items():
+                if isinstance(v, Yang) and k is not "_parent":
+                    v.set_operation(operation, recursive=recursive, force=force)
 
     def is_initialized(self):
         """
@@ -532,7 +601,7 @@ class Yang(object):
                     while object_ is not None:
                         itemparsed = itemClass.parse(self, object_)
                         if "operation" in object_.attrib.keys():
-                            itemparsed.set_operation(object_.attrib["operation"])
+                            itemparsed.set_operation(object_.attrib["operation"], recursive=False, force=True)
                             # itemparsed.set_operation(object_.attrib["operation"])
                         self.__dict__[key].add(itemparsed)
                         root.remove(object_)
@@ -542,7 +611,7 @@ class Yang(object):
                     if object_ is not None:
                         item._parse(self, object_)
                         if "operation" in object_.attrib.keys():
-                            self.set_operation(object_.attrib["operation"])
+                            self.set_operation(object_.attrib["operation"], recursive=False, force=True)
                             # self.set_operation(object_.attrib["operation"])
 
     def diff(self, target):
@@ -669,21 +738,40 @@ class Leaf(Yang):
 
     def reduce(self, reference):
         """
-        Overides Yang method to reduce other, return True if its data if different from self.data or _operation attributes mismatch
+        Overrides Yang.reduce(): Delete instances which equivalently exist in the reference tree otherwise updates
+        operation attribute.
+        The call is recursive, a node is removed if and only if all of its children are removed.
         :param reference: instance of Yang
         :return: boolean
         """
+
         if isinstance(self.data, ET.Element):
-            if (ET.tostring(self.data) != ET.tostring(reference.data)) \
-                    or (self.get_operation() != reference.get_operation()) \
-                    or self.contains_operation("delete"):
+            if ET.tostring(self.data) != ET.tostring(reference.data):
+                if not self.has_operation(("delete", "remove")):
+                    self.set_operation("replace", recursive=False, force=True)
+                return False
+            elif not self.has_operation([reference.get_operation(), "merge"]):
                 return False
         else:
-            if (self.data != reference.data) \
-                    or (self.get_operation() != reference.get_operation()) \
-                    or self.contains_operation("delete"):
+            if self.data != reference.data:
+                if not self.has_operation(("delete", "remove")):
+                    self.set_operation("replace", recursive=False, force=True)
+                return False
+            elif not self.has_operation([reference.get_operation(), "merge"]):
                 return False
         return True
+
+        # if isinstance(self.data, ET.Element):
+        #     if (ET.tostring(self.data) != ET.tostring(reference.data)) \
+        #             or (self.get_operation() != reference.get_operation()) \
+        #             or self.contains_operation("delete"):
+        #         return False
+        # else:
+        #     if (self.data != reference.data) \
+        #             or (self.get_operation() != reference.get_operation()) \
+        #             or self.contains_operation("delete"):
+        #         return False
+        # return True
 
     def __eq__(self, other):
         """
@@ -1138,7 +1226,7 @@ class ListedYang(Yang):
 
     def reduce(self, reference):
         """
-        Delete instances which equivalently exist in the reference tree.
+        Delete instances which equivalently exist in the reference tree otherwise updates operation attribute
         The call is recursive, a node is removed if and only if all of its children are removed.
         :param reference: Yang
         :return:
@@ -1432,15 +1520,17 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
                 return True
         return False
 
-    def set_operation(self, operation="delete"):
+    def set_operation(self, operation, recursive=True, force=True):
         """
-        Set operation for all of items in ListYang dict`
+        Set operation for all items in ListYang dict`
         :param operation: string
+        :param recursive: boolean, default is True; determines if children operations are also set or not
+        :param force: boolean, determines if overwrite of attribute is enforced (True) or not
         :return: -
         """
-        super(ListYang, self).set_operation(operation)
+        super(ListYang, self).set_operation(operation, recursive=recursive, force=force)
         for key in self._data.keys():
-            self._data[key].set_operation(operation)
+            self._data[key].set_operation(operation, recursive=recursive, force=force)
 
     def bind(self, relative=False):
         for v in self.values():

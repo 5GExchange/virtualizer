@@ -196,7 +196,11 @@ module virtualizer4 {
 
   container virtualizer {
     description "Container for a single virtualizer";
-    uses id-name;
+    uses id-name {
+      refine id {
+         mandatory true;
+      }
+    }
 
     container nodes{
       list node{ // infra nodes
