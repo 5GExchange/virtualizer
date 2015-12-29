@@ -37,13 +37,13 @@ from collections import OrderedDict, Iterable
 import StringIO
 import os
 
-__EDIT_OPERATION_TYPE_ENUMERATION__ = [  # see https://tools.ietf.org/html/rfc6241#section-7.2
+__EDIT_OPERATION_TYPE_ENUMERATION__ = (  # see https://tools.ietf.org/html/rfc6241#section-7.2
     "merge",  # default operation
     "replace",
     "create",
     "delete",
     "remove"
-]
+)
 
 class Yang(object):
     """
@@ -69,19 +69,24 @@ class Yang(object):
         else:
             self.__dict__[key]= value
 
-    def get_next(self, children=None):
+    def get_next(self, children=None, operation=None):
         """
         Returns the next Yang element followed by the one called for. It can be used for in-depth traversar of the yang tree.
         :param children: Yang (for up level call to hand over the callee children)
         :return: Yang
         """
         i = 0
+        if operation is None:
+            operation = (None, ) + __EDIT_OPERATION_TYPE_ENUMERATION__
         if len(self._sorted_children) > 0:
             if children is None:
                 while i < len(self._sorted_children):
                     if (self.__dict__[self._sorted_children[i]] is not None) and \
-                        (self.__dict__[self._sorted_children[i]].is_initialized()):
-                        return self.__dict__[self._sorted_children[i]]
+                            (self.__dict__[self._sorted_children[i]].is_initialized()):
+                        if self.__dict__[self._sorted_children[i]].has_operation(operation):
+                            return self.__dict__[self._sorted_children[i]]
+                        else:
+                            return self.__dict__[self._sorted_children[i]].get_next(operation=operation)
                     i += 1
             else:
                 while i < len(self._sorted_children):
@@ -90,12 +95,15 @@ class Yang(object):
                         break
                 while i < len(self._sorted_children):
                     if (self.__dict__[self._sorted_children[i]] is not None) and \
-                        (self.__dict__[self._sorted_children[i]].is_initialized()):
-                        return self.__dict__[self._sorted_children[i]]
+                            (self.__dict__[self._sorted_children[i]].is_initialized()):
+                        if self.__dict__[self._sorted_children[i]].has_operation(operation):
+                            return self.__dict__[self._sorted_children[i]]
+                        else:
+                            return self.__dict__[self._sorted_children[i]].get_next(operation=operation)
                     i += 1
         if self._parent is None:
             return None
-        return self._parent.get_next(self)
+        return self._parent.get_next(self, operation)
         
     def get_parent(self):
         """
@@ -237,9 +245,14 @@ class Yang(object):
                             if v.reduce(reference.__dict__[k]):
                                 v.delete()
                             else:
+                                # v.set_operation("replace", recursive=False, force=False)
                                 _reduce = False
+                    else:
+                        v.set_operation("create", recursive=False, force=False)
+                        _reduce = False
                 elif v != reference.__dict__[k]:  # to handle _operation, etc.
                     _reduce = False
+        # self.set_operation("merge", recursive=False, force=False)
         return _reduce
 
     def get_path(self):
@@ -1253,29 +1266,47 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         self._data = OrderedDict()
         self._type = type
 
-    def get_next(self, children=None):
+    def get_next(self, children=None, operation=None):
         """
         Overrides Yang method. Returns the next Yang element followed by the one called for. It can be used for in-depth traversar of the yang tree.
         :param children: Yang (for up level call to hand over the callee children)
         :return: Yang
         """
+        if operation is None:
+            operation = (None, ) + __EDIT_OPERATION_TYPE_ENUMERATION__
         if children is None:
             # return first key
-            for key in self._data: return self._data[key]
+            for key in self._data:
+                if self._data[key].has_operation(operation):
+                    return self._data[key]
+                else:
+                    return self._data[key].get_next(operation=operation)
             # go to parent
             if self._parent is not None:
-                return self._parent.get_next(self)
+                return self._parent.get_next(self, operation)
             else:
                 return None
         else:
             # pretty tricky internal dic access, see http://stackoverflow.com/questions/12328184/how-to-get-the-next-item-in-an-ordereddict
             next = self._data._OrderedDict__map[children.keys()][1]
-            if next is self._data._OrderedDict__root:
-                if self._parent is not None:
-                    return self._parent.get_next(self)
+            if not (next is self._data._OrderedDict__root):
+                if self._data[next[2]].has_operation(operation):
+                    return self._data[next[2]]
                 else:
-                    return None
-            return self._data[next[2]]
+                    return self._data[next[2]].get_next(operation=operation)
+                    # children = self._data[next[2]]
+                    # next = self._data._OrderedDict__map[children.keys()][1]
+            if self._parent is not None:
+                return self.get_parent().get_next(self, operation)
+            else:
+                return None
+
+            # if next is self._data._OrderedDict__root:
+            #     if self._parent is not None:
+            #         return self._parent.get_next(self, operation)
+            #     else:
+            #         return None
+            # return self._data[next[2]]
 
     def get_type(self):
         """
@@ -1484,8 +1515,10 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
                 if self[key].reduce(reference[key]):
                     self[key].delete()
                 else:
+                    # self[key].set_operation("replace", recursive=False, force=False)
                     _reduce = False
             else:
+                self[key].set_operation("create", recursive=False, force=False)
                 _reduce = False
         return _reduce
 
@@ -1505,6 +1538,8 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         :param other: ListYang
         :return: boolean
         """
+        if not issubclass(type(other), ListYang):
+            return False
         if self._data == other._data:
             return True
         return False
@@ -1528,7 +1563,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         :param force: boolean, determines if overwrite of attribute is enforced (True) or not
         :return: -
         """
-        super(ListYang, self).set_operation(operation, recursive=recursive, force=force)
+        # super(ListYang, self).set_operation(operation, recursive=recursive, force=force)
         for key in self._data.keys():
             self._data[key].set_operation(operation, recursive=recursive, force=force)
 
