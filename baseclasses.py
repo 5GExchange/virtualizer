@@ -14,6 +14,7 @@
 
 __copyright__ = "Copyright 2015, Ericsson Hungary Ltd."
 __license__ = "Apache License, Version 2.0"
+__version__ = "v4beta"
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,10 +29,10 @@ __license__ = "Apache License, Version 2.0"
 # limitations under the License.
 
 
-import xml.etree.ElementTree as ET
 from xml.dom.minidom import parseString
+import xml.etree.ElementTree as ET
 import copy
-from types import *
+# from types import *
 from decimal import *
 from collections import OrderedDict, Iterable
 import StringIO
@@ -266,9 +267,53 @@ class Yang(object):
         else:
             return "/" + self.get_tag()
 
+    def create_path(self, source, path=None):
+        """
+        Create yang tree from source for non-existing objects along the path
+        :param source: Yang, used to initialize the yang tree as needed
+        :param path: string, path to create; if None then source's path is used
+        :return: Yang, Yang object at the source instance's / path's path
+        """
+        if path is None:
+            path = source.get_path()
+        if path == "":
+            return self
+        p = path.split("/")
+        l = p.pop(0)
+        if path[0] == "/": # absolute path
+            if self.get_parent() is not None:
+                return self.get_parent().create_path(source, path)
+            elif self.get_tag() == p[0]:
+                p.pop(0)
+                return self.create_path(source, "/".join(p))
+            raise ValueError("Root tag not found in walk_path()")
+        if l == "..":
+            return self.get_parent().create_path(source, "/".join(p))
+        elif (l.find("[") > 0) and (l.find("]") > 0):
+            attrib = l[0: l.find("[")]
+            keystring = l[l.find("[") + 1: l.rfind("]")]
+            key = list()
+            keyvalues = keystring.split(",")
+            for kv in keyvalues:
+                v = kv.split("=")
+                key.append(v[1])
+            if len(key) == 1:
+                key = key[0]
+
+            if not (key in self.__dict__[attrib].keys()):
+                _yang = source.walk_path(self.get_path())[key]
+                self.__dict__[attrib].add(_yang.empty_copy())
+            return getattr(self, attrib)[key].create_path(source, "/".join(p))
+        else:
+            if not (l in self.__dict__.keys()):
+                _yang = getattr(source.walk_path(self.get_path()), l)
+                self.__dict__[l]= _yang.empty_copy()
+                self.__dict__[l].set_parent(self)
+            return getattr(self, l).create_path(source, "/".join(p))
+
     def walk_path(self, path):
         """
-        Follows the specified path to return the instance it represents
+        Follows the specified path to return the instance the path points to (handles relative and absolute paths)
         :param path: string
         :return: attribute instance of Yang
         """
@@ -296,11 +341,15 @@ class Yang(object):
                     v = kv.split("=")
                     key.append(v[1])
                 if len(key) == 1:
-                    return getattr(self, attrib)[key[0]].walk_path("/".join(p))
-                else:
-                    return getattr(self, attrib)[key].walk_path("/".join(p))
+                    if key[0] in self.__dict__[attrib].keys():
+                        return getattr(self, attrib)[key[0]].walk_path("/".join(p))
+                elif key in self.__dict__[attrib].keys():
+                   return getattr(self, attrib)[key].walk_path("/".join(p))
             else:
-                return getattr(self, l).walk_path("/".join(p))
+                if l in self.__dict__.keys():
+                    return getattr(self, l).walk_path("/".join(p))
+        raise ValueError("Path does not exist from {f} to {t}".format(f=self.get_path(), t="/".join(p)))
+
 
     def get_rel_path(self, target):
         """
@@ -507,8 +556,15 @@ class Yang(object):
         :param execute: True - operation is executed; False - operation is copied
         :return: -
         """
+
         if execute and source.has_operation(('delete', 'remove')):
-            self.delete()
+            if isinstance(source, Leaf):
+                self.clear_data()
+            else:
+                self.delete()
+            return
+
+        if not source.is_initialized():
             return
 
         for k, v in source.__dict__.items():
@@ -524,14 +580,14 @@ class Yang(object):
                         if v != self.__dict__[k]:
                             self.__dict__[k] = copy.deepcopy(v)
 
-
     def merge(self, source):
         """
         Merge source into the instance recursively; source remains unchanged.
         :param source: instance of Yang
         :return: -
         """
-        self.__merge__(source, False)
+        dst = self.create_path(source)
+        dst.__merge__(source, False)
 
     def patch(self, source):
         """
@@ -543,11 +599,25 @@ class Yang(object):
 
     def empty_copy(self):
         """
-        Performs copy of instance of Yang
+        Create a new Yang instance of the same type, only the tag and key values are set (see ListedYang overrides)
         :param: -
         :return: instance copy (of Yang)
         """
         return self.__class__(self._tag)
+
+    # def minimal_copy(self):
+    #     """
+    #     Creates a new Yang instance of the same type. Key and mandatory fields are copied.
+    #     :param: -
+    #     :return: instance copy (of Yang)
+    #     """
+    #     new = self.__class__(self._tag)
+    #     for k, v in self.__dict__.items():
+    #         if k is not "_parent":
+    #             if isinstance(v, Leaf) and v.is_mandatory():
+    #                 self.__dict__[k] = copy.deepcopy(v)
+    #             # elif isinstance(v, Yang):
+    #             #     self.__dict__[k] = v.empty_copy()
 
     def full_copy(self):
         """
@@ -703,6 +773,13 @@ class Leaf(Yang):
         :return: -
         """
         self.mandatory = mandatory
+
+    def is_mandatory(self):
+        """
+        Returns True if mandatory field; otherwise returns false
+        :return: boolean
+        """
+        return self.mandatory
 
     def is_initialized(self):
         """
