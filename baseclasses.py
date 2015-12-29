@@ -156,7 +156,7 @@ class Yang(object):
         root = self._et(None, False, ordered)
         return ET.tostring(root, encoding="utf8", method="html")
 
-    def html(self, ordered=True):
+    def html(self, ordered=True, header="", tailer=""):
         """
         Dump the class subtree as HTML pretty formatted string
         :return: string
@@ -186,7 +186,7 @@ class Yang(object):
         root.write(output)
         if output.buflist[-1] == '\n':
             output.buflist.pop()
-        html = output.getvalue()
+        html = header + output.getvalue() + tailer
         output.close()
         return html
 
@@ -507,7 +507,7 @@ class Yang(object):
         :param execute: True - operation is executed; False - operation is copied
         :return: -
         """
-        if execute and source.get_operation() == 'delete':
+        if execute and source.has_operation(('delete', 'remove')):
             self.delete()
             return
 
@@ -515,7 +515,8 @@ class Yang(object):
             if k is not "_parent":
                 if k not in self.__dict__.keys():
                         self.__dict__[k] = copy.deepcopy(v)
-                        self.__dict__[k].set_parent(self)
+                        if isinstance(v, Yang):
+                            self.__dict__[k].set_parent(self)
                 else:
                     if isinstance(v, Yang):
                         self.__dict__[k].__merge__(v, execute)
