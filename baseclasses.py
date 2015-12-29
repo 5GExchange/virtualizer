@@ -449,8 +449,8 @@ class Yang(object):
         :param force: boolean, determines if overwrite of attribute is enforced (True) or not
         :return: -
         """
-        if operation not in __EDIT_OPERATION_TYPE_ENUMERATION__:
-            raise ValueError("Illegal operation value: operation={operation} at {yang}".replace(operation=operation, yang=self.get_as_text()))
+        if operation not in ((None,) + __EDIT_OPERATION_TYPE_ENUMERATION__):
+            raise ValueError("Illegal operation value: operation={operation} at {yang}".format(operation=operation, yang=self.get_as_text()))
         if force or (self._operation is None):
             self._operation = operation
         if recursive:
@@ -539,6 +539,7 @@ class Yang(object):
         :return: -
         """
         self.__merge__(source, True)
+        self.set_operation(None, recursive=True, force=True)
 
     def empty_copy(self):
         """
@@ -799,14 +800,14 @@ class Leaf(Yang):
                 eq = eq and (hasattr(other, k)) and (v == other.__dict__[k])
         return eq
 
-    def patch(self, candidate):
-        # not sure if all attributes have to be overwritten, or just self.data
-         for k, v in self.__dict__.items():
-            if k is not "_parent":
-                for k_, v_ in candidate.__dict__.items():
-                    if k == k_:
-                        self.__dict__[k] = candidate.__dict__[k]
-                        break
+    # def patch(self, candidate):
+    #     # not sure if all attributes have to be overwritten, or just self.data
+    #      for k, v in self.__dict__.items():
+    #         if k is not "_parent":
+    #             for k_, v_ in candidate.__dict__.items():
+    #                 if k == k_:
+    #                     self.__dict__[k] = candidate.__dict__[k]
+    #                     break
 
 class StringLeaf(Leaf):
     """
