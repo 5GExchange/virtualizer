@@ -105,7 +105,18 @@ class Yang(object):
         if self._parent is None:
             return None
         return self._parent.get_next(self, operation)
-        
+
+    def get_attr(self, attrib, v=None):
+        if hasattr(self, attrib):
+            return self.__dict__[attrib]
+        if (v is not None) and isinstance(v, Yang):
+            _v = v.walk_path(self.get_path())
+            if hasattr(_v, attrib):
+                return _v.__dict__[attrib]
+        raise ValueError("Attrib={attrib} cannot be found in self={self} and other={v}".format(
+                self=self.get_as_text(),v=v.get_as_text()))
+
+
     def get_parent(self):
         """
         Returns the parent in the class subtree.
@@ -267,6 +278,20 @@ class Yang(object):
         else:
             return "/" + self.get_tag()
 
+    def has_path(self, path, at=None):
+        """
+        Check if path is in the object's path
+        :param path: string, pattern to check for
+        :param at: int, position to check for (can be negative)
+        :return: boolean, True if match; False otherwise
+        """
+        p = self.get_path().split('/')
+        if at is not None:
+            if len(p) > abs(at):
+                return p[at] == path
+            return False
+        return path in p
+
     def create_path(self, source, path=None):
         """
         Create yang tree from source for non-existing objects along the path
@@ -348,7 +373,7 @@ class Yang(object):
             else:
                 if l in self.__dict__.keys():
                     return getattr(self, l).walk_path("/".join(p))
-        raise ValueError("Path does not exist from {f} to {t}".format(f=self.get_path(), t="/".join(p)))
+        raise ValueError("Path does not exist from {f} to {t}; yang tree={y}".format(f=self.get_path(), t=l+"/"+"/".join(p), y=self.html()))
 
 
     def get_rel_path(self, target):
@@ -443,7 +468,8 @@ class Yang(object):
         :return: string
         """
         # return self.xml()
-        return self.get_as_text()
+        # return self.get_as_text()
+        return self.html()
 
     def has_operation(self, operation):
         """
@@ -461,7 +487,7 @@ class Yang(object):
             if self._operation in operation:
                 return True
             return False
-        if (operation is not None) and (not operation is __EDIT_OPERATION_TYPE_ENUMERATION__):
+        if (operation is not None) and (operation not in __EDIT_OPERATION_TYPE_ENUMERATION__):
             raise ValueError("has_operation(): Illegal operation value={operation}".format(operation=operation))
         if self._operation == operation:
             return True
@@ -594,8 +620,9 @@ class Yang(object):
         Method to process diff changeset, i.e., merge AND execute operations in the diff. For example, operation = delete removes the yang object.        :param diff: Yang
         :return: -
         """
-        self.__merge__(source, True)
-        self.set_operation(None, recursive=True, force=True)
+        dst = self.create_path(source)
+        dst.__merge__(source, True)
+        dst.set_operation(None, recursive=True, force=True)
 
     def empty_copy(self):
         """
