@@ -292,7 +292,7 @@ class Yang(object):
             return False
         return path in p
 
-    def create_path(self, source, path=None):
+    def create_path(self, source, path=None, target_copy_type=None):
         """
         Create yang tree from source for non-existing objects along the path
         :param source: Yang, used to initialize the yang tree as needed
@@ -304,16 +304,19 @@ class Yang(object):
         if path == "":
             return self
         p = path.split("/")
+        _copy_type = "empty"
+        if len(p) == 1:
+            _copy_type = "full"
         l = p.pop(0)
         if path[0] == "/": # absolute path
             if self.get_parent() is not None:
-                return self.get_parent().create_path(source, path)
+                return self.get_parent().create_path(source, path=path, target_copy_type=target_copy_type)
             elif self.get_tag() == p[0]:
                 p.pop(0)
-                return self.create_path(source, "/".join(p))
+                return self.create_path(source, path="/".join(p), target_copy_type=target_copy_type)
             raise ValueError("Root tag not found in walk_path()")
         if l == "..":
-            return self.get_parent().create_path(source, "/".join(p))
+            return self.get_parent().create_path(source, path="/".join(p), target_copy_type=target_copy_type)
         elif (l.find("[") > 0) and (l.find("]") > 0):
             attrib = l[0: l.find("[")]
             keystring = l[l.find("[") + 1: l.rfind("]")]
@@ -327,14 +330,14 @@ class Yang(object):
 
             if not (key in self.__dict__[attrib].keys()):
                 _yang = source.walk_path(self.get_path())[key]
-                self.__dict__[attrib].add(_yang.empty_copy())
-            return getattr(self, attrib)[key].create_path(source, "/".join(p))
+                self.__dict__[attrib].add(_yang.copy(_copy_type))
+            return getattr(self, attrib)[key].create_path(source, path="/".join(p), target_copy_type=target_copy_type)
         else:
-            if not (l in self.__dict__.keys()):
+            if (not (l in self.__dict__.keys())) or (getattr(self, l) is None):
                 _yang = getattr(source.walk_path(self.get_path()), l)
-                self.__dict__[l]= _yang.empty_copy()
+                self.__dict__[l]= _yang.copy(_copy_type)
                 self.__dict__[l].set_parent(self)
-            return getattr(self, l).create_path(source, "/".join(p))
+            return getattr(self, l).create_path(source, path="/".join(p), target_copy_type=target_copy_type)
 
     def walk_path(self, path):
         """
@@ -371,10 +374,9 @@ class Yang(object):
                 elif key in self.__dict__[attrib].keys():
                    return getattr(self, attrib)[key].walk_path("/".join(p))
             else:
-                if l in self.__dict__.keys():
+                if (l in self.__dict__.keys()) and (getattr(self, l) is not None):
                     return getattr(self, l).walk_path("/".join(p))
         raise ValueError("Path does not exist from {f} to {t}; yang tree={y}".format(f=self.get_path(), t=l+"/"+"/".join(p), y=self.html()))
-
 
     def get_rel_path(self, target):
         """
@@ -624,6 +626,14 @@ class Yang(object):
         dst.__merge__(source, True)
         dst.set_operation(None, recursive=True, force=True)
 
+    def copy(self, copy_type=None):
+
+        if (copy_type is None) or (copy_type == 'full'):
+            return self.full_copy()
+        else:
+            return self.empty_copy()
+
+
     def empty_copy(self):
         """
         Create a new Yang instance of the same type, only the tag and key values are set (see ListedYang overrides)
@@ -684,16 +694,17 @@ class Yang(object):
         if leaf_ref in self._referred:
             self._referred.remove(leaf_ref)
 
-    def bind(self, relative=False):
+    def bind(self, relative=False, reference=None):
         """
         Binds all elements of self attributes
         :param: relative: Boolean
+        :param: source: Yang tree, to copy missing referals if needed
         :return: -
         """
         if len(self._sorted_children) > 0:
             for c in self._sorted_children:
                 if self.__dict__[c] is not None:
-                    self.__dict__[c].bind(relative)
+                    self.__dict__[c].bind(relative=relative, reference=reference)
         return
 
     def _parse(self, parent, root):
@@ -1254,7 +1265,7 @@ class Leafref(StringLeaf):
         # if self.data is not None:
         #     return self.walk_path(self.data)
 
-    def bind(self, relative=False):
+    def bind(self, relative=False, reference=None):
         """
         Binds the target and add the referee to the referende list in the target. The path is updated to relative or absolut based on the parameter
         :param: relative: Boolean
@@ -1267,7 +1278,14 @@ class Leafref(StringLeaf):
                 self.data = self.target.get_path()
         elif self.data is not None:
             if self._parent is not None:
-                self.target = self.walk_path(self.data)
+                try:
+                    self.target = self.walk_path(self.data)
+                except (ValueError):
+                    if reference is not None:
+                        self.create_path(source=reference, path=self.data, target_copy_type='full')
+                        self.target = self.walk_path(self.data)
+                    else:
+                        raise
                 self.target.set_referred(self)
 
     def unbind(self):
@@ -1673,9 +1691,9 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         for key in self._data.keys():
             self._data[key].set_operation(operation, recursive=recursive, force=force)
 
-    def bind(self, relative=False):
+    def bind(self, relative=False, reference=None):
         for v in self.values():
-            v.bind(relative)
+            v.bind(relative=relative, reference=reference)
 
 
 class FilterYang(Yang):
