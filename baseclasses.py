@@ -973,7 +973,10 @@ class StringLeaf(Leaf):
         :return: -
         """
         if value is not None:
-            self.data = str(value)
+            if isinstance(value, (ET.ElementTree, ET.Element)):
+                self.data = value
+            else:
+                self.data = str(value)
         else:
             self.data= value
 
