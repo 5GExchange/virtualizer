@@ -262,7 +262,7 @@ class Yang(object):
                     else:
                         v.set_operation("create", recursive=False, force=False)
                         _reduce = False
-                elif v != reference.__dict__[k]:  # to handle _operation, etc.
+                elif (v is not None) and (v != reference.__dict__[k]):  # to handle _operation, etc.
                     _reduce = False
         # self.set_operation("merge", recursive=False, force=False)
         return _reduce
@@ -875,6 +875,8 @@ class Leaf(Yang):
         :return: boolean
         """
 
+        if self.data is None:
+            return True
         if isinstance(self.data, ET.Element):
             if ET.tostring(self.data) != ET.tostring(reference.data):
                 if not self.has_operation(("delete", "remove")):
