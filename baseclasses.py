@@ -32,11 +32,11 @@ __version__ = "v4beta"
 from xml.dom.minidom import parseString
 import xml.etree.ElementTree as ET
 import copy
-# from types import *
 from decimal import *
 from collections import OrderedDict, Iterable
 import StringIO
 import os
+import string
 
 __EDIT_OPERATION_TYPE_ENUMERATION__ = (  # see https://tools.ietf.org/html/rfc6241#section-7.2
     "merge",  # default operation
@@ -1245,6 +1245,7 @@ class Leafref(StringLeaf):
             self.target = None
             return
         if type(value) is str:
+            value = value.translate(None,string.whitespace)  # removing whitespaces or newlines from path
             if self.data != value:
                 self.unbind()
                 self.target = None
