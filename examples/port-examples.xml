@@ -253,7 +253,7 @@
                 <port>
                     <id>7</id>
                     <name>Public port with Cf-Or interface</name>
-                    <port_type>port-abstract</port_type>
+                    <port_type>port-sap</port_type>
                     <!-- Used to connect this port to a UNIFY orchestrator's Cf-Or reference point. Support controller - orchestrator or orchestrator - controller connection establishment -->
                     <control>
                         <!-- Which fields are filled in at the request depend on the handshake direction between the controller and the orchestrator. In the end both will be filled in -->
