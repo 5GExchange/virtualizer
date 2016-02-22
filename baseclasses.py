@@ -624,7 +624,7 @@ class Yang(object):
                     if isinstance(v, Yang):
                         self.__dict__[k].__merge__(v, execute)
                     else:
-                        if v != self.__dict__[k]:
+                        if (v != self.__dict__[k]) and (v is not None):
                             self.__dict__[k] = copy.deepcopy(v)
 
     def merge(self, source):
@@ -1684,7 +1684,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         return _reduce
 
     def __merge__(self, source, execute=False):
-
+        #FIXME: handle operation delete/remove
         for item in source.keys():
             if item not in self.keys():
                 self.add(copy.deepcopy(source[item]))  # it should be a full_copy()
