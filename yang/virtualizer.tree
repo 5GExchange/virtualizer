@@ -1,4 +1,4 @@
-module: virtualizer4
+module: virtualizer
    +--rw virtualizer
       +--rw id          string
       +--rw name?       string
@@ -13,14 +13,27 @@ module: virtualizer4
       |     |     +--rw name?         string
       |     |     +--rw port_type?    string
       |     |     +--rw capability?   string
-      |     |     +--rw sap?          string
+      |     |     +--rw sap
+      |     |     |  +--rw id?           string
+      |     |     |  +--rw name?         string
+      |     |     |  +--rw technology?   string
+      |     |     |  +--rw resources
+      |     |     |     +--rw delay?       string
+      |     |     |     +--rw bandwidth?   string
+      |     |     |     +--rw cost?        string
       |     |     +--rw control
       |     |     |  +--rw controller?     string
       |     |     |  +--rw orchestrator?   string
-      |     |     +--rw resources
-      |     |     |  +--rw delay?       string
-      |     |     |  +--rw bandwidth?   string
-      |     |     |  +--rw cost?        string
+      |     |     +--rw addresses
+      |     |     |  +--rw l2?   string
+      |     |     |  +--rw l3* [id]
+      |     |     |  |  +--rw id           string
+      |     |     |  |  +--rw name?        string
+      |     |     |  |  +--rw configure?   string
+      |     |     |  |  +--rw client?      string
+      |     |     |  |  +--rw requested?   string
+      |     |     |  |  +--rw provided?    string
+      |     |     |  +--rw l4?   string
       |     |     +--rw metadata* [key]
       |     |        +--rw key      string
       |     |        +--rw value?   string
@@ -53,14 +66,27 @@ module: virtualizer4
       |     |     |     +--rw name?         string
       |     |     |     +--rw port_type?    string
       |     |     |     +--rw capability?   string
-      |     |     |     +--rw sap?          string
+      |     |     |     +--rw sap
+      |     |     |     |  +--rw id?           string
+      |     |     |     |  +--rw name?         string
+      |     |     |     |  +--rw technology?   string
+      |     |     |     |  +--rw resources
+      |     |     |     |     +--rw delay?       string
+      |     |     |     |     +--rw bandwidth?   string
+      |     |     |     |     +--rw cost?        string
       |     |     |     +--rw control
       |     |     |     |  +--rw controller?     string
       |     |     |     |  +--rw orchestrator?   string
-      |     |     |     +--rw resources
-      |     |     |     |  +--rw delay?       string
-      |     |     |     |  +--rw bandwidth?   string
-      |     |     |     |  +--rw cost?        string
+      |     |     |     +--rw addresses
+      |     |     |     |  +--rw l2?   string
+      |     |     |     |  +--rw l3* [id]
+      |     |     |     |  |  +--rw id           string
+      |     |     |     |  |  +--rw name?        string
+      |     |     |     |  |  +--rw configure?   string
+      |     |     |     |  |  +--rw client?      string
+      |     |     |     |  |  +--rw requested?   string
+      |     |     |     |  |  +--rw provided?    string
+      |     |     |     |  +--rw l4?   string
       |     |     |     +--rw metadata* [key]
       |     |     |        +--rw key      string
       |     |     |        +--rw value?   string
@@ -94,14 +120,27 @@ module: virtualizer4
       |     |        |     +--rw name?         string
       |     |        |     +--rw port_type?    string
       |     |        |     +--rw capability?   string
-      |     |        |     +--rw sap?          string
+      |     |        |     +--rw sap
+      |     |        |     |  +--rw id?           string
+      |     |        |     |  +--rw name?         string
+      |     |        |     |  +--rw technology?   string
+      |     |        |     |  +--rw resources
+      |     |        |     |     +--rw delay?       string
+      |     |        |     |     +--rw bandwidth?   string
+      |     |        |     |     +--rw cost?        string
       |     |        |     +--rw control
       |     |        |     |  +--rw controller?     string
       |     |        |     |  +--rw orchestrator?   string
-      |     |        |     +--rw resources
-      |     |        |     |  +--rw delay?       string
-      |     |        |     |  +--rw bandwidth?   string
-      |     |        |     |  +--rw cost?        string
+      |     |        |     +--rw addresses
+      |     |        |     |  +--rw l2?   string
+      |     |        |     |  +--rw l3* [id]
+      |     |        |     |  |  +--rw id           string
+      |     |        |     |  |  +--rw name?        string
+      |     |        |     |  |  +--rw configure?   string
+      |     |        |     |  |  +--rw client?      string
+      |     |        |     |  |  +--rw requested?   string
+      |     |        |     |  |  +--rw provided?    string
+      |     |        |     |  +--rw l4?   string
       |     |        |     +--rw metadata* [key]
       |     |        |        +--rw key      string
       |     |        |        +--rw value?   string
@@ -147,5 +186,6 @@ module: virtualizer4
       |        +--rw bandwidth?   string
       |        +--rw cost?        string
       +--rw metadata* [key]
-         +--rw key      string
-         +--rw value?   string
+      |  +--rw key      string
+      |  +--rw value?   string
+      +--rw version?    string

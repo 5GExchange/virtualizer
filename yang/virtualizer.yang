@@ -1,8 +1,12 @@
-module virtualizer4 {
+module virtualizer {
   namespace "urn:unify:virtualizer";
   prefix "virtualizer";
   organization "ETH";
   contact "Robert Szabo <robert.szabo@ericsson.com>";
+
+  revision "2016-02-24" {
+    description "V5.0: Common port configuration were added to the yang model from the metadata fields";
+  }
 
   revision "2016-02-19" {
     description "Added port/control (for Cf-Or interface); port/resources; link-resources/cost and sofware-resource/cost for administrative metric; clarifications for port/capability";
@@ -59,6 +63,24 @@ module virtualizer4 {
     }
   }
 
+  grouping l3-address {
+    uses id-name;
+    leaf configure {
+      description "True: this is a configuration request; False: this is fyi";
+      type string;
+    }
+    leaf client {
+      description "Configuration service support at the client: {'dhcp-client', 'pre-configured'}; if not present it is left to the infrastructure to deal with it.";
+      type string;
+    }
+    leaf requested {
+      description "{'public', 'private', <ip_address>}";
+      type string;
+    }
+    leaf provided {
+      type string;
+    }
+  }
   // ------------ PORTS -------
   grouping port {
     uses id-name;
@@ -70,9 +92,16 @@ module virtualizer4 {
       description "To describe match and action capabilities associated with the port, e.g., match=port,tag,ip,tcp,udp,mpls,of1.0, where port: based forwarding; tag: unify abstract tagging; ip: ip address matching etc.";
       type string;
     }
-    leaf sap {
-      description "Used to defin interdomain connection identifier.";
-      type string;
+    container sap {
+      uses id-name;
+      leaf technology {
+        description "e.g., ('IEEE802.1q': '0x00c', 'MPLS': 70, 'IEEE802.1q')";
+        type string;
+      }
+      container resources{
+        description "Only used for domain boundary ports (port-sap type), where this is used to derive interconnection link characteristics.";
+        uses link-resource;
+      }
     }
     container control {
       description "Used to connect this port to a UNIFY orchestrator's Cf-Or reference point. Support controller - orchestrator or orchestrator - controller connection establishment.";
@@ -85,9 +114,19 @@ module virtualizer4 {
         type string;
       }
     }
-    container resources{
-      description "Only used for domain boundary ports (port-sap type), where this is used to derive interconnection link characteristics.";
-      uses link-resource;
+    container addresses {
+      leaf l2 {
+        description "Requested or provided";
+        type string;
+      }
+      list l3 {
+        key "id";
+        uses l3-address;
+      }
+      leaf l4 {
+        description "e.g., request: {tcp/22, tcp/8080}; response {tcp/22: (192.168.1.100, 1001)";
+        type string;
+      }
     }
     uses metadata;
   }
@@ -238,7 +277,6 @@ module virtualizer4 {
         mandatory true;
       }
     }
-
     container nodes{
       list node{ // infra nodes
         key "id";
@@ -247,6 +285,10 @@ module virtualizer4 {
     }
     uses links; // infra links
     uses metadata;
+    leaf version {
+      description "yang and virtualizer library version";
+      type string;
+    }
   }
 
 }

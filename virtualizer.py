@@ -1,4 +1,4 @@
-#    Filename: virtualizer3.py		 Created: 2015-11-20  12:46:43
+#    Filename: virtualizer.py		 Created: 2016-02-24  15:36:37
 #    This file was automatically created by a pyang plugin (PNC) developed at Ericsson Hungary Ltd., 2015
 #    Authors: Robert Szabo, Balazs Miriszlai, Akos Recse, Raphael Vicente Rosa
 #    Credits: Robert Szabo, Raphael Vicente Rosa, David Jocha, Janos Elek, Balazs Miriszlai, Akos Recse
@@ -9,8 +9,8 @@
 #    Prefix: virtualizer
 #    Organization: ETH
 #    Contact: Robert Szabo <robert.szabo@ericsson.com>
-#    Revision: 2015-07-20
-#    Description: Virtualizer's revised (simplified) data model
+#    Revision: 2016-02-24
+#    Description: V5.0: Common port configuration were added to the yang model from the metadata fields
 
 __copyright__ = "Copyright 2015, Ericsson Hungary Ltd."
 __license__ = "Apache License, Version 2.0"
@@ -29,11 +29,6 @@ __license__ = "Apache License, Version 2.0"
 
 
 from baseclasses import *
-
-
-# YANG construct: typedef port-ref
-class Port_ref(StringLeaf):
-    pass
 
 
 # YANG construct: grouping id-name
@@ -59,37 +54,101 @@ class GroupingId_name_type(GroupingId_name):
         """:type: StringLeaf"""
 
 
-# YANG construct: grouping port
-class GroupingPort(GroupingId_name):
-    def __init__(self, tag, parent=None, id=None, name=None, port_type=None, capability=None, sap=None):
-        GroupingId_name.__init__(self, tag, parent, id, name)
-        self._sorted_children = ["id", "name", "port_type", "capability", "sap"]
-        # yang construct: leaf
-        self.port_type = StringLeaf("port_type", parent=self, value=port_type)
-        """:type: StringLeaf"""
-        # yang construct: leaf
-        self.capability = StringLeaf("capability", parent=self, value=capability)
-        """:type: StringLeaf"""
-        # yang construct: leaf
-        self.sap = StringLeaf("sap", parent=self, value=sap)
-        """:type: StringLeaf"""
+# YANG construct: grouping metadata
+class GroupingMetadata(Yang):
+    def __init__(self, tag, parent=None):
+        super(GroupingMetadata, self).__init__(tag, parent)
+        self._sorted_children = ["metadata"]
+        # yang construct: list
+        self.metadata = ListYang("metadata", parent=self, type=MetadataMetadata)
+        """:type: ListYang(MetadataMetadata)"""
+
+    def add(self, item):
+        return self.metadata.add(item)
+
+    def remove(self, item):
+        return self.metadata.remove(item)
+
+    def __getitem__(self, key):
+        return self.metadata[key]
+
+    def __iter__(self):
+        return self.metadata.itervalues()
 
 
 # YANG construct: grouping link-resource
 class GroupingLink_resource(Yang):
-    def __init__(self, tag, parent=None, delay=None, bandwidth=None):
+    def __init__(self, tag, parent=None, delay=None, bandwidth=None, cost=None):
         super(GroupingLink_resource, self).__init__(tag, parent)
-        self._sorted_children = ["delay", "bandwidth"]
+        self._sorted_children = ["delay", "bandwidth", "cost"]
         # yang construct: leaf
         self.delay = StringLeaf("delay", parent=self, value=delay)
         """:type: StringLeaf"""
         # yang construct: leaf
         self.bandwidth = StringLeaf("bandwidth", parent=self, value=bandwidth)
         """:type: StringLeaf"""
+        # yang construct: leaf
+        self.cost = StringLeaf("cost", parent=self, value=cost)
+        """:type: StringLeaf"""
+
+
+# YANG construct: grouping l3-address
+class GroupingL3_address(GroupingId_name):
+    def __init__(self, tag, parent=None, id=None, name=None, configure=None, client=None, requested=None, provided=None):
+        GroupingId_name.__init__(self, tag, parent, id, name)
+        self._sorted_children = ["id", "name", "configure", "client", "requested", "provided"]
+        # yang construct: leaf
+        self.configure = StringLeaf("configure", parent=self, value=configure)
+        """:type: StringLeaf"""
+        # yang construct: leaf
+        self.client = StringLeaf("client", parent=self, value=client)
+        """:type: StringLeaf"""
+        # yang construct: leaf
+        self.requested = StringLeaf("requested", parent=self, value=requested)
+        """:type: StringLeaf"""
+        # yang construct: leaf
+        self.provided = StringLeaf("provided", parent=self, value=provided)
+        """:type: StringLeaf"""
+
+
+# YANG construct: grouping port
+class GroupingPort(GroupingId_name, GroupingMetadata):
+    def __init__(self, tag, parent=None, id=None, name=None, port_type=None, capability=None, sap=None, control=None, addresses=None):
+        GroupingId_name.__init__(self, tag, parent, id, name)
+        GroupingMetadata.__init__(self, tag, parent)
+        self._sorted_children = ["id", "name", "port_type", "capability", "sap", "control", "addresses", "metadata"]
+        # yang construct: leaf
+        self.port_type = StringLeaf("port_type", parent=self, value=port_type)
+        """:type: StringLeaf"""
+        # yang construct: leaf
+        self.capability = StringLeaf("capability", parent=self, value=capability)
+        """:type: StringLeaf"""
+        # yang construct: container
+        self.sap = None
+        """:type: PortSap"""
+        if sap is not None:
+            self.sap = sap
+        else:
+            self.sap = PortSap(parent=self, tag="sap")
+        # yang construct: container
+        self.control = None
+        """:type: PortControl"""
+        if control is not None:
+            self.control = control
+        else:
+            self.control = PortControl(parent=self, tag="control")
+        # yang construct: container
+        self.addresses = None
+        """:type: PortAddresses"""
+        if addresses is not None:
+            self.addresses = addresses
+        else:
+            self.addresses = PortAddresses(parent=self, tag="addresses")
 
 
 # YANG construct: grouping flowentry
 class GroupingFlowentry(GroupingId_name):
+    """The flowentry syntax will follow ovs-ofctrl string format. The UNIFY general tagging mechanism will be use like 'mpls'-> 'tag', i.e., push_tag:tag; pop_tag:tag..."""
     def __init__(self, tag, parent=None, id=None, name=None, priority=None, port=None, match=None, action=None, out=None, resources=None):
         GroupingId_name.__init__(self, tag, parent, id, name)
         self._sorted_children = ["id", "name", "priority", "port", "match", "action", "out", "resources"]
@@ -167,9 +226,9 @@ class GroupingLinks(Yang):
 
 # YANG construct: grouping software-resource
 class GroupingSoftware_resource(Yang):
-    def __init__(self, tag, parent=None, cpu=None, mem=None, storage=None):
+    def __init__(self, tag, parent=None, cpu=None, mem=None, storage=None, cost=None):
         super(GroupingSoftware_resource, self).__init__(tag, parent)
-        self._sorted_children = ["cpu", "mem", "storage"]
+        self._sorted_children = ["cpu", "mem", "storage", "cost"]
         # yang construct: leaf
         self.cpu = StringLeaf("cpu", parent=self, value=cpu, mandatory=True)
         """:type: StringLeaf"""
@@ -179,15 +238,19 @@ class GroupingSoftware_resource(Yang):
         # yang construct: leaf
         self.storage = StringLeaf("storage", parent=self, value=storage, mandatory=True)
         """:type: StringLeaf"""
+        # yang construct: leaf
+        self.cost = StringLeaf("cost", parent=self, value=cost)
+        """:type: StringLeaf"""
 
 
 # YANG construct: grouping node
-class GroupingNode(GroupingId_name_type, GroupingLinks):
+class GroupingNode(GroupingId_name_type, GroupingLinks, GroupingMetadata):
     """Any node: infrastructure or NFs"""
     def __init__(self, tag, parent=None, id=None, name=None, type=None, ports=None, links=None, resources=None):
         GroupingId_name_type.__init__(self, tag, parent, id, name, type)
         GroupingLinks.__init__(self, tag, parent, links)
-        self._sorted_children = ["id", "name", "type", "ports", "links", "resources"]
+        GroupingMetadata.__init__(self, tag, parent)
+        self._sorted_children = ["id", "name", "type", "ports", "links", "resources", "metadata"]
         # yang construct: container
         self.ports = None
         """:type: NodePorts"""
@@ -231,7 +294,7 @@ class GroupingInfra_node(GroupingNode, GroupingFlowtable):
     def __init__(self, tag, parent=None, id=None, name=None, type=None, ports=None, links=None, resources=None, NF_instances=None, capabilities=None, flowtable=None):
         GroupingNode.__init__(self, tag, parent, id, name, type, ports, links, resources)
         GroupingFlowtable.__init__(self, tag, parent, flowtable)
-        self._sorted_children = ["id", "name", "type", "ports", "links", "resources", "NF_instances", "capabilities", "flowtable"]
+        self._sorted_children = ["id", "name", "type", "ports", "links", "resources", "metadata", "NF_instances", "capabilities", "flowtable"]
         # yang construct: container
         self.NF_instances = None
         """:type: Nodes"""
@@ -248,6 +311,27 @@ class GroupingInfra_node(GroupingNode, GroupingFlowtable):
             self.capabilities = Infra_nodeCapabilities(parent=self, tag="capabilities")
 
 
+# YANG construct: list metadata
+class MetadataMetadata(ListedYang):
+    def __init__(self, tag="metadata", parent=None, key=None, value=None):
+        ListedYang.__init__(self, "metadata", ["key"])
+        self._sorted_children = ["key", "value"]
+        # yang construct: leaf
+        self.key = StringLeaf("key", parent=self, value=key, mandatory=True)
+        """:type: StringLeaf"""
+        # yang construct: leaf
+        self.value = StringLeaf("value", parent=self, value=value)
+        """:type: StringLeaf"""
+
+
+# YANG construct: list l3
+class L3_address(ListedYang, GroupingL3_address):
+    def __init__(self, tag="l3", parent=None, id=None, name=None, configure=None, client=None, requested=None, provided=None):
+        ListedYang.__init__(self, "l3", ["id"])
+        GroupingL3_address.__init__(self, tag, parent, id, name, configure, client, requested, provided)
+        self._sorted_children = ["id", "name", "configure", "client", "requested", "provided"]
+
+
 # YANG construct: list flowentry
 class Flowentry(ListedYang, GroupingFlowentry):
     def __init__(self, tag="flowentry", parent=None, id=None, name=None, priority=None, port=None, match=None, action=None, out=None, resources=None):
@@ -259,17 +343,17 @@ class Flowentry(ListedYang, GroupingFlowentry):
 # YANG construct: list link
 class Link(ListedYang, GroupingLink):
     def __init__(self, tag="link", parent=None, id=None, name=None, src=None, dst=None, resources=None):
-        ListedYang.__init__(self, "link", ["src", "dst"])
+        ListedYang.__init__(self, "link", ["id"])
         GroupingLink.__init__(self, tag, parent, id, name, src, dst, resources)
         self._sorted_children = ["id", "name", "src", "dst", "resources"]
 
 
 # YANG construct: list port
 class Port(ListedYang, GroupingPort):
-    def __init__(self, tag="port", parent=None, id=None, name=None, port_type=None, capability=None, sap=None):
+    def __init__(self, tag="port", parent=None, id=None, name=None, port_type=None, capability=None, sap=None, control=None, addresses=None):
         ListedYang.__init__(self, "port", ["id"])
-        GroupingPort.__init__(self, tag, parent, id, name, port_type, capability, sap)
-        self._sorted_children = ["id", "name", "port_type", "capability", "sap"]
+        GroupingPort.__init__(self, tag, parent, id, name, port_type, capability, sap, control, addresses)
+        self._sorted_children = ["id", "name", "port_type", "capability", "sap", "control", "addresses", "metadata"]
 
 
 # YANG construct: list node
@@ -277,7 +361,7 @@ class Node(ListedYang, GroupingNode):
     def __init__(self, tag="node", parent=None, id=None, name=None, type=None, ports=None, links=None, resources=None):
         ListedYang.__init__(self, "node", ["id"])
         GroupingNode.__init__(self, tag, parent, id, name, type, ports, links, resources)
-        self._sorted_children = ["id", "name", "type", "ports", "links", "resources"]
+        self._sorted_children = ["id", "name", "type", "ports", "links", "resources", "metadata"]
 
 
 # YANG construct: list node
@@ -285,14 +369,81 @@ class Infra_node(ListedYang, GroupingInfra_node):
     def __init__(self, tag="node", parent=None, id=None, name=None, type=None, ports=None, links=None, resources=None, NF_instances=None, capabilities=None, flowtable=None):
         ListedYang.__init__(self, "node", ["id"])
         GroupingInfra_node.__init__(self, tag, parent, id, name, type, ports, links, resources, NF_instances, capabilities, flowtable)
-        self._sorted_children = ["id", "name", "type", "ports", "links", "resources", "NF_instances", "capabilities", "flowtable"]
+        self._sorted_children = ["id", "name", "type", "ports", "links", "resources", "metadata", "NF_instances", "capabilities", "flowtable"]
+
+
+# YANG construct: container sap
+class PortSap(GroupingId_name):
+    def __init__(self, tag="sap", parent=None, id=None, name=None, technology=None, resources=None):
+        GroupingId_name.__init__(self, tag, parent, id, name)
+        self._sorted_children = ["id", "name", "technology", "resources"]
+        # yang construct: leaf
+        self.technology = StringLeaf("technology", parent=self, value=technology)
+        """:type: StringLeaf"""
+        # yang construct: container
+        self.resources = None
+        """:type: PortSapResources"""
+        if resources is not None:
+            self.resources = resources
+        else:
+            self.resources = PortSapResources(parent=self, tag="resources")
+
+
+# YANG construct: container resources
+class PortSapResources(GroupingLink_resource):
+    """Only used for domain boundary ports (port-sap type), where this is used to derive interconnection link characteristics."""
+    def __init__(self, tag="resources", parent=None, delay=None, bandwidth=None, cost=None):
+        GroupingLink_resource.__init__(self, tag, parent, delay, bandwidth, cost)
+        self._sorted_children = ["delay", "bandwidth", "cost"]
+
+
+# YANG construct: container control
+class PortControl(Yang):
+    """Used to connect this port to a UNIFY orchestrator's Cf-Or reference point. Support controller - orchestrator or orchestrator - controller connection establishment."""
+    def __init__(self, tag="control", parent=None, controller=None, orchestrator=None):
+        super(PortControl, self).__init__(tag, parent)
+        self._sorted_children = ["controller", "orchestrator"]
+        # yang construct: leaf
+        self.controller = StringLeaf("controller", parent=self, value=controller)
+        """:type: StringLeaf"""
+        # yang construct: leaf
+        self.orchestrator = StringLeaf("orchestrator", parent=self, value=orchestrator)
+        """:type: StringLeaf"""
+
+
+# YANG construct: container addresses
+class PortAddresses(Yang):
+    def __init__(self, tag="addresses", parent=None, l2=None, l4=None):
+        super(PortAddresses, self).__init__(tag, parent)
+        self._sorted_children = ["l2", "l3", "l4"]
+        # yang construct: list
+        self.l3 = ListYang("l3", parent=self, type=L3_address)
+        """:type: ListYang(L3_address)"""
+        # yang construct: leaf
+        self.l2 = StringLeaf("l2", parent=self, value=l2)
+        """:type: StringLeaf"""
+        # yang construct: leaf
+        self.l4 = StringLeaf("l4", parent=self, value=l4)
+        """:type: StringLeaf"""
+
+    def add(self, item):
+        return self.l3.add(item)
+
+    def remove(self, item):
+        return self.l3.remove(item)
+
+    def __getitem__(self, key):
+        return self.l3[key]
+
+    def __iter__(self):
+        return self.l3.itervalues()
 
 
 # YANG construct: container resources
 class Link_resource(GroupingLink_resource):
-    def __init__(self, tag="resources", parent=None, delay=None, bandwidth=None):
-        GroupingLink_resource.__init__(self, tag, parent, delay, bandwidth)
-        self._sorted_children = ["delay", "bandwidth"]
+    def __init__(self, tag="resources", parent=None, delay=None, bandwidth=None, cost=None):
+        GroupingLink_resource.__init__(self, tag, parent, delay, bandwidth, cost)
+        self._sorted_children = ["delay", "bandwidth", "cost"]
 
 
 # YANG construct: container flowtable
@@ -363,9 +514,9 @@ class NodePorts(Yang):
 
 # YANG construct: container resources
 class Software_resource(GroupingSoftware_resource):
-    def __init__(self, tag="resources", parent=None, cpu=None, mem=None, storage=None):
-        GroupingSoftware_resource.__init__(self, tag, parent, cpu, mem, storage)
-        self._sorted_children = ["cpu", "mem", "storage"]
+    def __init__(self, tag="resources", parent=None, cpu=None, mem=None, storage=None, cost=None):
+        GroupingSoftware_resource.__init__(self, tag, parent, cpu, mem, storage, cost)
+        self._sorted_children = ["cpu", "mem", "storage", "cost"]
 
 
 # YANG construct: container NF_instances
@@ -390,12 +541,13 @@ class Infra_nodeCapabilities(Yang):
 
 
 # YANG construct: container virtualizer
-class Virtualizer(GroupingId_name, GroupingLinks):
+class Virtualizer(GroupingId_name, GroupingLinks, GroupingMetadata):
     """Container for a single virtualizer"""
-    def __init__(self, tag="virtualizer", parent=None, id=None, name=None, nodes=None, links=None):
+    def __init__(self, tag="virtualizer", parent=None, id=None, name=None, nodes=None, links=None, version=None):
         GroupingId_name.__init__(self, tag, parent, id, name)
         GroupingLinks.__init__(self, tag, parent, links)
-        self._sorted_children = ["id", "name", "nodes", "links"]
+        GroupingMetadata.__init__(self, tag, parent)
+        self._sorted_children = ["id", "name", "nodes", "links", "metadata", "version"]
         # yang construct: container
         self.nodes = None
         """:type: VirtualizerNodes"""
@@ -403,6 +555,9 @@ class Virtualizer(GroupingId_name, GroupingLinks):
             self.nodes = nodes
         else:
             self.nodes = VirtualizerNodes(parent=self, tag="nodes")
+        # yang construct: leaf
+        self.version = StringLeaf("version", parent=self, value=version)
+        """:type: StringLeaf"""
 
 
 # YANG construct: container nodes
