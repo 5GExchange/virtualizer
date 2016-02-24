@@ -74,10 +74,11 @@ module virtualizer {
       type string;
     }
     leaf requested {
-      description "{'public', 'private', <ip_address>}";
+      description "To request port configuration, options: {'public', 'ip/mask'}, where public means the request of public IP address and private ip/mask a given address/mask configuration";
       type string;
     }
     leaf provided {
+      description "The provided L3 configuration in response to the requested field.";
       type string;
     }
   }
@@ -92,8 +93,10 @@ module virtualizer {
       description "To describe match and action capabilities associated with the port, e.g., match=port,tag,ip,tcp,udp,mpls,of1.0, where port: based forwarding; tag: unify abstract tagging; ip: ip address matching etc.";
       type string;
     }
-    container sap {
-      uses id-name;
+    leaf sap {
+      type string;
+    }
+    container sap-data {
       leaf technology {
         description "e.g., ('IEEE802.1q': '0x00c', 'MPLS': 70, 'IEEE802.1q')";
         type string;
