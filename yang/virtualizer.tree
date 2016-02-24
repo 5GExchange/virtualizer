@@ -13,9 +13,8 @@ module: virtualizer
       |     |     +--rw name?         string
       |     |     +--rw port_type?    string
       |     |     +--rw capability?   string
-      |     |     +--rw sap
-      |     |     |  +--rw id?           string
-      |     |     |  +--rw name?         string
+      |     |     +--rw sap?          string
+      |     |     +--rw sap-data
       |     |     |  +--rw technology?   string
       |     |     |  +--rw resources
       |     |     |     +--rw delay?       string
@@ -66,9 +65,8 @@ module: virtualizer
       |     |     |     +--rw name?         string
       |     |     |     +--rw port_type?    string
       |     |     |     +--rw capability?   string
-      |     |     |     +--rw sap
-      |     |     |     |  +--rw id?           string
-      |     |     |     |  +--rw name?         string
+      |     |     |     +--rw sap?          string
+      |     |     |     +--rw sap-data
       |     |     |     |  +--rw technology?   string
       |     |     |     |  +--rw resources
       |     |     |     |     +--rw delay?       string
@@ -120,9 +118,8 @@ module: virtualizer
       |     |        |     +--rw name?         string
       |     |        |     +--rw port_type?    string
       |     |        |     +--rw capability?   string
-      |     |        |     +--rw sap
-      |     |        |     |  +--rw id?           string
-      |     |        |     |  +--rw name?         string
+      |     |        |     +--rw sap?          string
+      |     |        |     +--rw sap-data
       |     |        |     |  +--rw technology?   string
       |     |        |     |  +--rw resources
       |     |        |     |     +--rw delay?       string

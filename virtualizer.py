@@ -1,4 +1,4 @@
-#    Filename: virtualizer.py		 Created: 2016-02-24  15:36:37
+#    Filename: virtualizer.py		 Created: 2016-02-24  17:25:54
 #    This file was automatically created by a pyang plugin (PNC) developed at Ericsson Hungary Ltd., 2015
 #    Authors: Robert Szabo, Balazs Miriszlai, Akos Recse, Raphael Vicente Rosa
 #    Credits: Robert Szabo, Raphael Vicente Rosa, David Jocha, Janos Elek, Balazs Miriszlai, Akos Recse
@@ -113,23 +113,26 @@ class GroupingL3_address(GroupingId_name):
 
 # YANG construct: grouping port
 class GroupingPort(GroupingId_name, GroupingMetadata):
-    def __init__(self, tag, parent=None, id=None, name=None, port_type=None, capability=None, sap=None, control=None, addresses=None):
+    def __init__(self, tag, parent=None, id=None, name=None, port_type=None, capability=None, sap=None, sap_data=None, control=None, addresses=None):
         GroupingId_name.__init__(self, tag, parent, id, name)
         GroupingMetadata.__init__(self, tag, parent)
-        self._sorted_children = ["id", "name", "port_type", "capability", "sap", "control", "addresses", "metadata"]
+        self._sorted_children = ["id", "name", "port_type", "capability", "sap", "sap_data", "control", "addresses", "metadata"]
         # yang construct: leaf
         self.port_type = StringLeaf("port_type", parent=self, value=port_type)
         """:type: StringLeaf"""
         # yang construct: leaf
         self.capability = StringLeaf("capability", parent=self, value=capability)
         """:type: StringLeaf"""
+        # yang construct: leaf
+        self.sap = StringLeaf("sap", parent=self, value=sap)
+        """:type: StringLeaf"""
         # yang construct: container
-        self.sap = None
-        """:type: PortSap"""
-        if sap is not None:
-            self.sap = sap
+        self.sap_data = None
+        """:type: PortSap_data"""
+        if sap_data is not None:
+            self.sap_data = sap_data
         else:
-            self.sap = PortSap(parent=self, tag="sap")
+            self.sap_data = PortSap_data(parent=self, tag="sap-data")
         # yang construct: container
         self.control = None
         """:type: PortControl"""
@@ -350,10 +353,10 @@ class Link(ListedYang, GroupingLink):
 
 # YANG construct: list port
 class Port(ListedYang, GroupingPort):
-    def __init__(self, tag="port", parent=None, id=None, name=None, port_type=None, capability=None, sap=None, control=None, addresses=None):
+    def __init__(self, tag="port", parent=None, id=None, name=None, port_type=None, capability=None, sap=None, sap_data=None, control=None, addresses=None):
         ListedYang.__init__(self, "port", ["id"])
-        GroupingPort.__init__(self, tag, parent, id, name, port_type, capability, sap, control, addresses)
-        self._sorted_children = ["id", "name", "port_type", "capability", "sap", "control", "addresses", "metadata"]
+        GroupingPort.__init__(self, tag, parent, id, name, port_type, capability, sap, sap_data, control, addresses)
+        self._sorted_children = ["id", "name", "port_type", "capability", "sap", "sap_data", "control", "addresses", "metadata"]
 
 
 # YANG construct: list node
@@ -372,25 +375,25 @@ class Infra_node(ListedYang, GroupingInfra_node):
         self._sorted_children = ["id", "name", "type", "ports", "links", "resources", "metadata", "NF_instances", "capabilities", "flowtable"]
 
 
-# YANG construct: container sap
-class PortSap(GroupingId_name):
-    def __init__(self, tag="sap", parent=None, id=None, name=None, technology=None, resources=None):
-        GroupingId_name.__init__(self, tag, parent, id, name)
-        self._sorted_children = ["id", "name", "technology", "resources"]
+# YANG construct: container sap-data
+class PortSap_data(Yang):
+    def __init__(self, tag="sap-data", parent=None, technology=None, resources=None):
+        super(PortSap_data, self).__init__(tag, parent)
+        self._sorted_children = ["technology", "resources"]
         # yang construct: leaf
         self.technology = StringLeaf("technology", parent=self, value=technology)
         """:type: StringLeaf"""
         # yang construct: container
         self.resources = None
-        """:type: PortSapResources"""
+        """:type: PortSap_dataResources"""
         if resources is not None:
             self.resources = resources
         else:
-            self.resources = PortSapResources(parent=self, tag="resources")
+            self.resources = PortSap_dataResources(parent=self, tag="resources")
 
 
 # YANG construct: container resources
-class PortSapResources(GroupingLink_resource):
+class PortSap_dataResources(GroupingLink_resource):
     """Only used for domain boundary ports (port-sap type), where this is used to derive interconnection link characteristics."""
     def __init__(self, tag="resources", parent=None, delay=None, bandwidth=None, cost=None):
         GroupingLink_resource.__init__(self, tag, parent, delay, bandwidth, cost)
