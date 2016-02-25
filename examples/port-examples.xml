@@ -10,13 +10,13 @@
             <ports>
 
                 <port>
-                    <id>0</id>
+                    <id>00</id>
                     <name>Abstract Unify</name>
                     <port_type>port-abstract</port_type>
                 </port>
 
                 <port>
-                    <id>1</id>
+                    <id>01</id>
                     <name>Simple inter-domain SAP</name>
                     <port_type>port-sap</port_type>
                     <!-- Interdomain connection identifier (if SAPs in different domains report the same ID, they are assumed to be directly interconnected): -->
@@ -24,160 +24,144 @@
                 </port>
 
                 <port>
-                    <id>2</id>
+                    <id>02</id>
                     <name>Iner-domain SAP with resources</name>
                     <port_type>port-sap</port_type>
                     <sap>SAP15</sap>
-                    <sap-data>
+                    <sap_data>
                         <resources>
                             <!-- Upper layer orchestrator (stitching the two domains together) will convert the two SAP port resources to a link with resources between these ports -->
                             <delay>3 ms</delay>
                             <bandwidth>100 MB/s</bandwidth>
                             <cost>10</cost>
                         </resources>
-                    </sap-data>
+                    </sap_data>
                 </port>
 
                 <port>
-                    <id>3a</id>
+                    <id>03a</id>
                     <name>Public IP port to be pushed to NF via DHCP (Step 1: request)</name>
                     <port_type>port-sap</port_type>
                     <sap>INTERNET</sap>
-                    <sap-data>
-                        <addresses>
-                            <l3>
-                                <id>addr1</id>
-                                <!-- address is to be pushed to NF: -->
-                                <configure>True</configure>
-                                <!-- client uses DHCP to receive address: -->
-                                <client>dhcp-client</client>
-                                <requested>public</requested>
-                            </l3>
-                        </addresses>
-                    </sap-data>
+                    <addresses>
+                        <l3>
+                            <id>addr1</id>
+                            <!-- address is to be pushed to NF: -->
+                            <configure>True</configure>
+                            <!-- client uses DHCP to receive address: -->
+                            <client>dhcp-client</client>
+                            <requested>public</requested>
+                        </l3>
+                    </addresses>
                 </port>
 
                 <port>
-                    <id>3b</id>
+                    <id>03b</id>
                     <name>Public IP port to be pushed to NF via DHCP (Step 2: response)</name>
                     <port_type>port-sap</port_type>
                     <sap>INTERNET</sap>
-                    <sap-data>
-                        <addresses>
-                            <l3>
-                                <id>addr1</id>
-                                <configure>True</configure>
-                                <client>dhcp-client</client>
-                                <requested>public</requested>
-                                <provided>8.8.8.8</provided>
-                            </l3>
-                        </addresses>
-                    </sap-data>
+                    <addresses>
+                        <l3>
+                            <id>addr1</id>
+                            <configure>True</configure>
+                            <client>dhcp-client</client>
+                            <requested>public</requested>
+                            <provided>8.8.8.8</provided>
+                        </l3>
+                    </addresses>
                 </port>
 
                 <port>
-                    <id>4a</id>
+                    <id>04a</id>
                     <name>Private IP (Step 1: resquest)</name>
                     <port_type>port-sap</port_type>
                     <sap>SAP22</sap>
-                    <sap-data>
-                        <addresses>
-                            <l3>
-                                <id>addr1</id>
-                                <configure>False</configure>
-                                <requested>192.168.0.1/24</requested>
-                            </l3>
-                        </addresses>
-                    </sap-data>
+                    <addresses>
+                        <l3>
+                            <id>addr1</id>
+                            <configure>False</configure>
+                            <requested>192.168.0.1/24</requested>
+                        </l3>
+                    </addresses>
                 </port>
 
                 <port>
-                    <id>4b</id>
+                    <id>04b</id>
                     <name>Private IP (Step 2: response)</name>
                     <port_type>port-sap</port_type>
                     <sap>SAP22</sap>
-                    <sap-data>
-                        <addresses>
-                            <l3>
-                                <id>addr1</id>
-                                <configure>False</configure>
-                                <requested>192.168.0.1/24</requested>
-                                <provided>192.168.0.1/24</provided>
-                            </l3>
-                        </addresses>
-                    </sap-data>
+                    <addresses>
+                        <l3>
+                            <id>addr1</id>
+                            <configure>False</configure>
+                            <requested>192.168.0.1/24</requested>
+                            <provided>192.168.0.1/24</provided>
+                        </l3>
+                    </addresses>
                 </port>
 
                 <port>
-                    <id>5a</id>
+                    <id>05a</id>
                     <name>L4 port (Step 1: resquest)</name>
                     <port_type>port-sap</port_type>
                     <sap>INTERNET</sap>
-                    <sap-data>
-                        <addresses>
-                            <l4>{'tcp/22', 'tcp/80'}</l4>
-                        </addresses>
-                    </sap-data>
+                    <addresses>
+                        <l4>{'tcp/22', 'tcp/80'}</l4>
+                    </addresses>
                 </port>
 
                 <port>
-                    <id>5b</id>
+                    <id>05b</id>
                     <name>L4 port (Step 2: response)</name>
                     <port_type>port-sap</port_type>
                     <sap>INTERNET</sap>
-                    <sap-data>
-                        <addresses>
-                            <l4>{'tcp/22': ('192.168.1.100', '1001'), 'tcp/80': ('192.168.1.150', '2001')}</l4>
-                        </addresses>
-                    </sap-data>
+                    <addresses>
+                        <l4>{'tcp/22': ('192.168.1.100', '1001'), 'tcp/80': ('192.168.1.150', '2001')}</l4>
+                    </addresses>
                 </port>
 
                 <port>
-                    <id>6a</id>
+                    <id>06a</id>
                     <name>Private and public IP port (Step 1: resquest)</name>
                     <port_type>port-sap</port_type>
                     <sap>INTERNET</sap>
-                    <sap-data>
-                        <addresses>
-                            <l3>
-                                <id>addr1</id>
-                                <configure>True</configure>
-                                <requested>private</requested>
-                            </l3>
-                            <l3>
-                                <id>addr2</id>
-                                <configure>False</configure>
-                                <requested>public</requested>
-                            </l3>
-                        </addresses>
-                    </sap-data>
+                    <addresses>
+                        <l3>
+                            <id>addr1</id>
+                            <configure>True</configure>
+                            <requested>private</requested>
+                        </l3>
+                        <l3>
+                            <id>addr2</id>
+                            <configure>False</configure>
+                            <requested>public</requested>
+                        </l3>
+                    </addresses>
                 </port>
 
                 <port>
-                    <id>6b</id>
+                    <id>06b</id>
                     <name>Private and public IP port (Step 2: response)</name>
                     <port_type>port-sap</port_type>
                     <sap>INTERNET</sap>
-                    <sap-data>
-                        <addresses>
-                            <l3>
-                                <id>addr1</id>
-                                <configure>True</configure>
-                                <requested>private</requested>
-                                <provided>192.168.1.5/24</provided>
-                            </l3>
-                            <l3>
-                                <id>addr2</id>
-                                <configure>False</configure>
-                                <requested>public</requested>
-                                <provided>8.8.8.10</provided>
-                            </l3>
-                        </addresses>
-                    </sap-data>
+                    <addresses>
+                        <l3>
+                            <id>addr1</id>
+                            <configure>True</configure>
+                            <requested>private</requested>
+                            <provided>192.168.1.5/24</provided>
+                        </l3>
+                        <l3>
+                            <id>addr2</id>
+                            <configure>False</configure>
+                            <requested>public</requested>
+                            <provided>8.8.8.10</provided>
+                        </l3>
+                    </addresses>
                 </port>
 
                 <port>
-                    <id>7</id>
+                    <id>07</id>
                     <name>Abstract Unify port with capabilities</name>
                     <port_type>port-abstract</port_type>
                     <!-- To describe match and action capabilities associated with the port, e.g., match=port,tag,ip,tcp,udp,mpls,of1.0, where port: based forwarding; tag: unify abstract tagging; ip: ip address matching etc. -->
@@ -186,7 +170,7 @@
                 </port>
 
                 <port>
-                    <id>8</id>
+                    <id>08</id>
                     <name>Abstract Unify port with capabilities</name>
                     <port_type>port-abstract</port_type>
                     <!-- Only port match/action : -->
@@ -194,7 +178,7 @@
                 </port>
 
                 <port>
-                    <id>9</id>
+                    <id>09</id>
                     <name>Abstract Unify port with capabilities</name>
                     <port_type>port-abstract</port_type>
                     <!-- Unify abstract tag capable port: -->
@@ -227,22 +211,20 @@
                     <id>12</id>
                     <name>Public port with Cf-Or interface</name>
                     <port_type>port-sap</port_type>
+					<sap>INTERNET</sap>
                     <control>
                         <controller>http://*:8080/cf-or/</controller>
                         <orchestrator>http://192.168.1.100:8080/cf-or/</orchestrator>
                     </control>
-                    <sap>INTERNET</sap>
-                    <sap-data>
-                        <addresses>
-                            <l3>
-                                <id>addr1</id>
-                                <configure>True</configure>
-                                <client>dhcp-client</client>
-                                <requested>public</requested>
-                                <provided>8.8.8.8</provided>
-                            </l3>
-                        </addresses>
-                    </sap-data>
+                    <addresses>
+                        <l3>
+                            <id>addr1</id>
+                            <configure>True</configure>
+                            <client>dhcp-client</client>
+                            <requested>public</requested>
+                            <provided>8.8.8.8</provided>
+                        </l3>
+                    </addresses>
                 </port>
 
                 <port>
@@ -250,10 +232,9 @@
                     <name>Inter-domain SAP port with Unify-tag technology specified</name>
                     <port_type>port-sap</port_type>
                     <sap>SAP100</sap>
-                    <sap-data>
-                        <name>SAP towards domain xyz</name>
+                    <sap_data>
                         <technology>('IEEE802.1q');</technology>
-                    </sap-data>
+                    </sap_data>
                 </port>
 
                 <port>
@@ -261,10 +242,9 @@
                     <name>Inter-domain SAP port with full protocol stack</name>
                     <port_type>port-sap</port_type>
                     <sap>SAP101</sap>
-                    <sap-data>
-                        <name>SAP towards domain xyz</name>
+                    <sap_data>
                         <technology>('IEEE802.1q': '0x00c', 'MPLS': 70, 'IEEE802.1q');</technology>
-                    </sap-data>
+                    </sap_data>
                 </port>
 
             </ports>
