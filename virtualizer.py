@@ -132,7 +132,7 @@ class GroupingPort(GroupingId_name, GroupingMetadata):
         if sap_data is not None:
             self.sap_data = sap_data
         else:
-            self.sap_data = PortSap_data(parent=self, tag="sap-data")
+            self.sap_data = PortSap_data(parent=self, tag="sap_data")
         # yang construct: container
         self.control = None
         """:type: PortControl"""
@@ -375,9 +375,9 @@ class Infra_node(ListedYang, GroupingInfra_node):
         self._sorted_children = ["id", "name", "type", "ports", "links", "resources", "metadata", "NF_instances", "capabilities", "flowtable"]
 
 
-# YANG construct: container sap-data
+# YANG construct: container sap_data
 class PortSap_data(Yang):
-    def __init__(self, tag="sap-data", parent=None, technology=None, resources=None):
+    def __init__(self, tag="sap_data", parent=None, technology=None, resources=None):
         super(PortSap_data, self).__init__(tag, parent)
         self._sorted_children = ["technology", "resources"]
         # yang construct: leaf

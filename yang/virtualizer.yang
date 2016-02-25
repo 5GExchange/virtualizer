@@ -96,7 +96,7 @@ module virtualizer {
     leaf sap {
       type string;
     }
-    container sap-data {
+    container sap_data {
       leaf technology {
         description "e.g., ('IEEE802.1q': '0x00c', 'MPLS': 70, 'IEEE802.1q')";
         type string;
