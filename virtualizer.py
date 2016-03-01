@@ -1,4 +1,4 @@
-#    Filename: virtualizer.py		 Created: 2016-02-25  12:05:01
+#    Filename: virtualizer.py		 Created: 2016-02-24  17:25:54
 #    This file was automatically created by a pyang plugin (PNC) developed at Ericsson Hungary Ltd., 2015
 #    Authors: Robert Szabo, Balazs Miriszlai, Akos Recse, Raphael Vicente Rosa
 #    Credits: Robert Szabo, Raphael Vicente Rosa, David Jocha, Janos Elek, Balazs Miriszlai, Akos Recse
@@ -9,11 +9,11 @@
 #    Prefix: virtualizer
 #    Organization: ETH
 #    Contact: Robert Szabo <robert.szabo@ericsson.com>
+#    Revision: 2016-02-24
 #    Description: V5.0: Common port configuration were added to the yang model from the metadata fields
 
 __copyright__ = "Copyright 2015, Ericsson Hungary Ltd."
 __license__ = "Apache License, Version 2.0"
-__version__ = "2016-02-24"
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -546,7 +546,7 @@ class Infra_nodeCapabilities(Yang):
 # YANG construct: container virtualizer
 class Virtualizer(GroupingId_name, GroupingLinks, GroupingMetadata):
     """Container for a single virtualizer"""
-    def __init__(self, tag="virtualizer", parent=None, id=None, name=None, nodes=None, links=None, version='2016-02-24'):
+    def __init__(self, tag="virtualizer", parent=None, id=None, name=None, nodes=None, links=None, version=None):
         GroupingId_name.__init__(self, tag, parent, id, name)
         GroupingLinks.__init__(self, tag, parent, links)
         GroupingMetadata.__init__(self, tag, parent)

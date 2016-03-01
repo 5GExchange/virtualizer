@@ -1013,11 +1013,6 @@ class StringLeaf(Leaf):
                 e_data.text = None
                 self.data = e_data
             else:
-                # check values
-                if self._tag == 'version':
-                    if self.get_as_text() != e_data.text:
-                        # it works because version has the correct version as default value
-                        print 'Warning: Versions are different!'
                 self.set_value(e_data.text)
             root.remove(e_data)
 
