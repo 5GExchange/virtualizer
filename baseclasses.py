@@ -241,7 +241,7 @@ class Yang(object):
         :return: True if object to be removed otherwise False
         """
         _reduce = True
-        _ignores = ["_parent", "_tag", "_sorted_children", "_referred", "_key_attributes"]
+        _ignores = ["_parent", "_tag", "_sorted_children", "_referred", "_key_attributes", "version"]
         if ignores is not None:
             if type(ignores) is tuple:
                 _ignores.extend(ignores)
