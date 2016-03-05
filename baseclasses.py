@@ -1,20 +1,13 @@
-#    Filename: baseclasses.py		 Created: 2015-08-28  11:27:19
-#    This file was automatically created by a pyang plugin (PNC) developed at Ericsson Hungary Ltd., 2015
+#    Yang baseclasses for the pyang plugin (PNC) developed at Ericsson Hungary Ltd.
 #    Authors: Robert Szabo, Balazs Miriszlai, Akos Recse, Raphael Vicente Rosa
 #    Credits: Robert Szabo, Raphael Vicente Rosa, David Jocha, Janos Elek, Balazs Miriszlai, Akos Recse
 #    Contact: Robert Szabo <robert.szabo@ericsson.com>
 
-#    Yang file info:
-#    Namespace: urn:unify:virtualizer
-#    Prefix: virtualizer
-#    Organization: ETH
-#    Contact: Robert Szabo <robert.szabo@ericsson.com>
-#    Revision: 2015-07-20
-#    Description: Virtualizer's revised (simplified) data model
 
-__copyright__ = "Copyright 2015, Ericsson Hungary Ltd."
+__copyright__ = "Copyright 2016, Ericsson Hungary Ltd."
 __license__ = "Apache License, Version 2.0"
-__version__ = "v4beta"
+__version_text__ = "yang/baseclasses/v5"
+__version__ = "2016-03-04"
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -45,6 +38,9 @@ __EDIT_OPERATION_TYPE_ENUMERATION__ = (  # see https://tools.ietf.org/html/rfc62
     "delete",
     "remove"
 )
+
+__IGNORED_ATTRIBUTES__ = ["_parent", "_tag", "_sorted_children", "_referred", "_key_attributes", "version"]
+# __REDUCE_DELETE_ATTRIBUTES__ = ["version"]
 
 
 class Yang(object):
@@ -119,11 +115,19 @@ class Yang(object):
         raise ValueError("Attrib={attrib} cannot be found in self={self} and other={v}".format(
                 self=self.get_as_text(), v=v.get_as_text()))
 
-    def get_parent(self):
+    def get_parent(self, level=1, tag=None):
         """
         Returns the parent in the class subtree.
+        :param level: number of recursive parent calls or number of tag match to iterate
+        :param tag: look for specific tag; if level is also used then levelth match of the tag
         :return: Yang
         """
+        if tag is not None:
+            if self._tag == tag:
+                return self._parent.get_parent(level=level-1, tag=tag) if level > 1 else self  # return self if no more level but matcing tag; otherwise continue
+            return self._parent.get_parent(level=level, tag=tag)
+        if level > 1:
+            return self._parent.get_parent(level=level-1)
         return self._parent
 
     def set_parent(self, parent):
@@ -241,7 +245,7 @@ class Yang(object):
         :return: True if object to be removed otherwise False
         """
         _reduce = True
-        _ignores = ["_parent", "_tag", "_sorted_children", "_referred", "_key_attributes"]
+        _ignores = list(__IGNORED_ATTRIBUTES__)
         if ignores is not None:
             if type(ignores) is tuple:
                 _ignores.extend(ignores)
@@ -269,6 +273,27 @@ class Yang(object):
                     _reduce = False
         # self.set_operation("merge", recursive=False, force=False)
         return _reduce
+
+    def clear_subtree(self, ignores=None):
+        """
+        Removes children recursively
+        :param ignores: list of attributes to be ignored (e.g., keys)
+        :return:
+        """
+
+        _ignores = list(__IGNORED_ATTRIBUTES__)
+        if ignores is not None:
+            if type(ignores) is tuple:
+                _ignores.extend(ignores)
+            else:
+                _ignores.append(ignores)
+        for k, v in self.__dict__.items():
+            if type(self._parent) is ListYang:
+                if k == self.keys():
+                    _ignores.append(k)
+            if k not in _ignores:
+                if isinstance(v, Yang):
+                    v.delete()
 
     def get_path(self):
         """
@@ -549,6 +574,8 @@ class Yang(object):
                                                                                                yang=self.get_as_text()))
         if force or (self._operation is None):
             self._operation = operation
+            if operation is "delete":
+                self.clear_subtree()
         if recursive:
             for k, v in self.__dict__.items():
                 if isinstance(v, Yang) and k is not "_parent":
@@ -563,13 +590,13 @@ class Yang(object):
         :return: -
         """
         if fromop not in ( __EDIT_OPERATION_TYPE_ENUMERATION__):
-            raise ValueError("Illegal operation value: operation={operation} at {yang}".format(operation=operation,
+            raise ValueError("Illegal operation value: operation={operation} at {yang}".format(operation=fromop,
                                                                                                yang=self.get_as_text()))
         if toop not in ( __EDIT_OPERATION_TYPE_ENUMERATION__):
-            raise ValueError("Illegal operation value: operation={operation} at {yang}".format(operation=operation,
+            raise ValueError("Illegal operation value: operation={operation} at {yang}".format(operation=toop,
                                                                                                yang=self.get_as_text()))
         if self._operation == fromop:
-            self._operation = toop
+            self.set_operation(toop, recursive=False, force=True)
         if recursive:
             for k, v in self.__dict__.items():
                 if isinstance(v, Yang) and k is not "_parent":
@@ -644,7 +671,11 @@ class Yang(object):
                         self.__dict__[k].set_parent(self)
                 else:
                     if isinstance(v, Yang):
-                        self.__dict__[k].__merge__(v, execute)
+                        if isinstance(self.__dict__[k], Yang):
+                            self.__dict__[k].__merge__(v, execute)
+                        else:
+                            self.__dict__[k] = v.full_copy()
+                            self.__dict__[k].set_parent(self)
                     else:
                         if (v != self.__dict__[k]) and (v is not None):
                             self.__dict__[k] = copy.deepcopy(v)
@@ -784,26 +815,16 @@ class Yang(object):
         :param target: Yang
         :return: Yang
         """
-        empty = copy.deepcopy(self)
-        empty.reduce(empty)
-        add = copy.deepcopy(target)
+
+        add = target.full_copy()
         add.reduce(self)
-        remove = copy.deepcopy(self)
+
+        remove = self.full_copy()
         remove.reduce(target)
         remove.replace_operation('create', 'delete', recursive=True)
-        if add.xml() == empty.xml():
-            if remove.xml() == empty.xml():
-                diff= empty
-            else:
-                diff= remove
-        else:
-            if remove.xml() == empty.xml():
-                diff= add
-            else:
-                diff= add
-                diff.merge(remove)
-        return diff
 
+        add.merge(remove)
+        return add
 
 class Leaf(Yang):
     """
@@ -1013,6 +1034,11 @@ class StringLeaf(Leaf):
                 e_data.text = None
                 self.data = e_data
             else:
+                # check version values
+                if self._tag == 'version':
+                    if self.get_as_text() != e_data.text:
+                        # it works because version has the correct version as default value
+                        print 'Warning: Versions are different!'
                 self.set_value(e_data.text)
             root.remove(e_data)
 
@@ -1375,13 +1401,14 @@ class ListedYang(Yang):
         super(ListedYang, self).__init__(tag, parent)
         self._key_attributes = keys
 
-    def get_parent(self):
+    def get_parent(self, level=1, tag=None):
         """
-        Returns parent`s parent of ListedYang
-        :param: -
-        :return: instance of Yang
+        Returns the parent in the class subtree. See parent class for parameters
+        :return: Yang
         """
-        return self._parent.get_parent()
+        if tag is not None:
+            return super(ListedYang, self).get_parent(level=level, tag=tag)
+        return super(ListedYang, self).get_parent(level=level+1, tag=tag)
 
     def keys(self):
         """
@@ -1445,14 +1472,10 @@ class ListedYang(Yang):
         keys = self.get_key_tags()
         return super(ListedYang, self).reduce(reference, keys)
 
+    def clear_subtree(self, ignores=None):
+        keys = self.get_key_tags()
+        return super(ListedYang, self).clear_subtree(keys)
 
-
-        # for k, v in self.__dict__.items():
-        #     if k != "_parent" and k != "_operation" and not v in keys:
-        #         if isinstance(v, Yang):
-        #             if k in reference.__dict__.keys():
-        #                 if type(v) == type(reference.__dict__[k]):
-        #                     v.reduce(reference.__dict__[k])
 
 
 class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
