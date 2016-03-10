@@ -235,6 +235,15 @@ class Yang(object):
         """
         pass
 
+    def update_parent(self):
+        _ignores = list(__IGNORED_ATTRIBUTES__)
+        for k, v in self.__dict__.items():
+            if k not in _ignores:
+                if isinstance(v, Yang):
+                    v.set_parent(self)
+                    v.update_parent()
+
+
     def reduce(self, reference, ignores=None):
         """
         Delete instances which equivalently exist in the reference tree.
