@@ -30,6 +30,10 @@ from collections import OrderedDict, Iterable
 import StringIO
 import os
 import string
+import logging
+
+logger = logging.getLogger("baseclasses")
+
 
 __EDIT_OPERATION_TYPE_ENUMERATION__ = (  # see https://tools.ietf.org/html/rfc6241#section-7.2
     "merge",  # default operation
@@ -39,7 +43,8 @@ __EDIT_OPERATION_TYPE_ENUMERATION__ = (  # see https://tools.ietf.org/html/rfc62
     "remove"
 )
 
-__IGNORED_ATTRIBUTES__ = ["_parent", "_tag", "_sorted_children", "_referred", "_key_attributes", "version"]
+__IGNORED_ATTRIBUTES__ = ("_parent", "_tag", "_sorted_children", "_referred", "_key_attributes", "version")
+__EQ_IGNORED_ATTRIBUTES__ = ("_parent", "_sorted_children", "_referred", "_key_attributes", "version")
 
 
 class Yang(object):
@@ -236,9 +241,8 @@ class Yang(object):
         pass
 
     def update_parent(self):
-        _ignores = list(__IGNORED_ATTRIBUTES__)
         for k, v in self.__dict__.items():
-            if k not in _ignores:
+            if k not in __IGNORED_ATTRIBUTES__:
                 if isinstance(v, Yang):
                     v.set_parent(self)
                     v.update_parent()
@@ -631,6 +635,9 @@ class Yang(object):
         """
         if other is None:
             return False
+        if self is other:
+            logger.warning("__eq__ for the same objects self={self}; other={other}".format(self=self.get_as_text(), other=other.get_as_text()))
+            return True
         eq = True
         # Check attributes
         self_atribs = self.__dict__
@@ -638,10 +645,11 @@ class Yang(object):
         eq = eq and (self_atribs.keys().sort() == other_atribs.keys().sort())
         if eq:
             for k in self_atribs.keys():
-                if k is not "_parent":
+                if k not in __EQ_IGNORED_ATTRIBUTES__:
                     for k_ in other_atribs.keys():
                         if k == k_:
                             eq = eq and (self_atribs[k] == other_atribs[k_])
+                            if not eq: return False
         # Check class attributes
         self_class_atribs = self.__class__.__dict__
         other_class_atribs = other.__class__.__dict__
@@ -651,6 +659,7 @@ class Yang(object):
                 for k_ in other_class_atribs.keys():
                     if k == k_ and not callable(self_class_atribs[k]):
                         eq = eq and (self_class_atribs[k] == other_class_atribs[k_])
+                        if not eq: return False
         return eq
 
     def __merge__(self, source, execute=False):
@@ -979,18 +988,6 @@ class Leaf(Yang):
                 return False
         return True
 
-        # if isinstance(self.data, ET.Element):
-        #     if (ET.tostring(self.data) != ET.tostring(reference.data)) \
-        #             or (self.get_operation() != reference.get_operation()) \
-        #             or self.contains_operation("delete"):
-        #         return False
-        # else:
-        #     if (self.data != reference.data) \
-        #             or (self.get_operation() != reference.get_operation()) \
-        #             or self.contains_operation("delete"):
-        #         return False
-        # return True
-
     def __eq__(self, other):
         """
         Check if other leaf has the same attributes and values, returns True if yes
@@ -999,19 +996,9 @@ class Leaf(Yang):
         """
         eq = True
         for k, v in self.__dict__.items():
-            if k is not "_parent":
+            if k not in __EQ_IGNORED_ATTRIBUTES__:
                 eq = eq and (hasattr(other, k)) and (v == other.__dict__[k])
         return eq
-
-        # def patch(self, candidate):
-        #     # not sure if all attributes have to be overwritten, or just self.data
-        #      for k, v in self.__dict__.items():
-        #         if k is not "_parent":
-        #             for k_, v_ in candidate.__dict__.items():
-        #                 if k == k_:
-        #                     self.__dict__[k] = candidate.__dict__[k]
-        #                     break
-
 
 class StringLeaf(Leaf):
     """
@@ -1046,7 +1033,7 @@ class StringLeaf(Leaf):
                 if self._tag == 'version':
                     if self.get_as_text() != e_data.text:
                         # it works because version has the correct version as default value
-                        print 'Warning: Versions are different!'
+                        logger.warning('Version are different!')
                 self.set_value(e_data.text)
             root.remove(e_data)
 
@@ -1398,6 +1385,18 @@ class Leafref(StringLeaf):
     def unbind(self):
         if self.target is not None:
             self.target.unset_referred(self)
+
+    def __eq__(self, other):
+        """
+        Check if other leaf has the same attributes and values, returns True if yes
+        :param other: instance
+        :return: boolean
+        """
+        eq = True
+        for k, v in self.__dict__.items():
+            if k not in (__EQ_IGNORED_ATTRIBUTES__ + ("target",)):
+                eq = eq and (hasattr(other, k)) and (v == other.__dict__[k])
+        return eq
 
 
 class ListedYang(Yang):
