@@ -286,6 +286,41 @@ class Yang(object):
         # self.set_operation("merge", recursive=False, force=False)
         return _reduce
 
+    def _diff(self, source, ignores=None):
+        """
+        Delete instances which equivalently exist in the reference tree.
+        The call is recursive, a node is removed if and only if all of its children are removed.
+        :param reference: Yang
+        :param ignores: tuple of attribute names not to use during the compare operation
+        :return: True if object to be removed otherwise False
+        """
+        _ignores = list(__IGNORED_ATTRIBUTES__)
+        if ignores is not None:
+            if type(ignores) is tuple:
+                _ignores.extend(ignores)
+            else:
+                _ignores.append(ignores)
+        for k, v in self.__dict__.items():
+            if type(self._parent) is ListYang:  # todo: move this outside
+                if k == self.keys():
+                    _ignores.append(k)
+            if k not in _ignores:
+                if isinstance(v, Yang):
+                    if k in source.__dict__.keys():
+                        if type(v) == type(source.__dict__[k]):
+                            v._diff(source.__dict__[k])
+                            if v.is_initialized() is False:
+                                v.delete()
+                    else:
+                        v.set_operation("create", recursive=False, force=False)
+        for k, v in source.__dict__.items():
+            if k not in _ignores:
+                if isinstance(v, Yang):
+                    if k not in self.__dict__.keys():
+                        self.__dict__[k] = v.empty_copy()
+                        self.__dict__[k].set_operation("delete", recursive=False, force=True)
+
+
     def clear_subtree(self, ignores=None):
         """
         Removes children recursively
@@ -622,7 +657,7 @@ class Yang(object):
         :return: boolean
         """
         for k, v in self.__dict__.items():
-            if isinstance(v, Yang) and k is not "_parent":
+            if isinstance(v, Yang) and (k is not "_parent"):
                 if v.is_initialized():
                     return True
         return False
@@ -730,19 +765,6 @@ class Yang(object):
         """
         return self.__class__(self._tag)
 
-    # def minimal_copy(self):
-    #     """
-    #     Creates a new Yang instance of the same type. Key and mandatory fields are copied.
-    #     :param: -
-    #     :return: instance copy (of Yang)
-    #     """
-    #     new = self.__class__(self._tag)
-    #     for k, v in self.__dict__.items():
-    #         if k is not "_parent":
-    #             if isinstance(v, Leaf) and v.is_mandatory():
-    #                 self.__dict__[k] = copy.deepcopy(v)
-    #             # elif isinstance(v, Yang):
-    #             #     self.__dict__[k] = v.empty_copy()
 
     def full_copy(self):
         """
@@ -783,7 +805,7 @@ class Yang(object):
         if leaf_ref in self._referred:
             self._referred.remove(leaf_ref)
 
-    def bind(self, relative=False, reference=None):
+    def bind(self, relative=True, reference=None):
         """
         Binds all elements of self attributes
         :param relative: Boolean
@@ -827,21 +849,40 @@ class Yang(object):
                             # self.set_operation(object_.attrib["operation"])
 
     def diff(self, target):
-        """
-        Method to return an independent changeset between target and the instance (neither the instance nor the target is modified).
-        :param target: Yang
-        :return: Yang
-        """
+        diff = target.full_copy()
+        target._diff(self)
+        return target
 
-        add = target.full_copy()
-        add.reduce(self)
-
-        remove = self.full_copy()
-        remove.reduce(target)
-        remove.replace_operation('create', 'delete', recursive=True)
-
-        add.merge(remove)
-        return add
+    # def diff(self, target):
+    #     """
+    #     Method to return an independent changeset between target and the instance (neither the instance nor the target is modified).
+    #     :param target: Yang
+    #     :return: Yang
+    #     """
+    #
+    #     add = target.full_copy()
+    #     add.reduce(self)
+    #
+    #     remove = self.full_copy()
+    #     remove.reduce(target)
+    #     remove.replace_operation('create', 'delete', recursive=True)
+    #     n = remove.get_next(operation=("merge", "replace", "create"))
+    #     to_be_removed = []
+    #     while n is not None:
+    #         to_be_removed.append(n)
+    #         n = n.get_next(operation=("merge", "replace", "create"))
+    #     for n in to_be_removed:
+    #         try:
+    #             p = n.get_parent()
+    #             n.delete()
+    #             while p.is_initialized() is False:
+    #                 p = p.get_parent()
+    #                 p.delete()
+    #         except:
+    #             pass
+    #
+    #     remove.merge(add)
+    #     return remove
 
 class Leaf(Yang):
     """
@@ -987,6 +1028,26 @@ class Leaf(Yang):
             elif not self.has_operation([reference.get_operation(), "merge"]):
                 return False
         return True
+
+
+    def _diff(self, source):
+        """
+        Overrides Yang.reduce(): Delete instances which equivalently exist in the reference tree otherwise updates
+        operation attribute.
+        The call is recursive, a node is removed if and only if all of its children are removed.
+        :param reference: instance of Yang
+        :return: boolean
+        """
+
+        if (self.data is None) and (source.data is not None):
+            self.data = copy.deepcopy(source.data)
+            self.set_operation("delete", recursive=False, force=True)
+        elif (self.data is not None) and (source.data is None):
+            self.set_operation("create", recursive=False, force=True)
+        elif self.get_as_text() != source.get_as_text():
+            self.set_operation("replace", recursive=False, force=True)
+        else:
+            self.clear_data()
 
     def __eq__(self, other):
         """
@@ -1304,7 +1365,7 @@ class Leafref(StringLeaf):
             self.target = None
             return
         if type(value) is str:
-            value = value.translate(None,string.whitespace)  # removing whitespaces or newlines from path
+            value = value.translate(None, string.whitespace)  # removing whitespaces or newlines from path
             if self.data != value:
                 self.unbind()
                 self.target = None
@@ -1340,8 +1401,7 @@ class Leafref(StringLeaf):
         if self.data is not None:
             return self.data
         if self.target is not None:
-            self.bind()
-            return self.data
+            return self.target.get_path()
         else:
             raise ReferenceError("Leafref get_as_text() is called but neither data nor target exists.")
 
@@ -1353,12 +1413,9 @@ class Leafref(StringLeaf):
         """
         if self.target is None:
             return self.walk_path(self.data, reference=reference)
-            # self.bind() # sets the target
         return self.target
-        # if self.data is not None:
-        #     return self.walk_path(self.data)
 
-    def bind(self, relative=False, reference=None):
+    def bind(self, relative=True, reference=None):
         """
         Binds the target and add the referee to the referende list in the target. The path is updated to relative or absolut based on the parameter
         :param relative: Boolean - Create relative paths if True; absolute path is False
@@ -1381,6 +1438,9 @@ class Leafref(StringLeaf):
                     else:
                         raise
                 self.target.set_referred(self)
+                if ((self.data[0] == "/") and (relative is True)) or ((self.data[0] != "/") and (relative is False)):
+                    self.bind(relative=relative)
+
 
     def unbind(self):
         if self.target is not None:
@@ -1407,6 +1467,18 @@ class ListedYang(Yang):
     def __init__(self, tag, keys, parent=None):
         super(ListedYang, self).__init__(tag, parent)
         self._key_attributes = keys
+
+    def is_initialized(self):
+        """
+        Check if any of the attributes of instance are initialized, returns True if yes
+        :param: -
+        :return: boolean
+        """
+        for k, v in self.__dict__.items():
+            if isinstance(v, Yang) and (k is not "_parent") and (k not in self._key_attributes):
+                if v.is_initialized():
+                    return True
+        return False
 
     def get_parent(self, level=1, tag=None):
         """
@@ -1478,6 +1550,17 @@ class ListedYang(Yang):
         """
         keys = self.get_key_tags()
         return super(ListedYang, self).reduce(reference, keys)
+
+
+    def _diff(self, source):
+        """
+        Delete instances which equivalently exist in the reference tree otherwise updates operation attribute
+        The call is recursive, a node is removed if and only if all of its children are removed.
+        :param reference: Yang
+        :return:
+        """
+        keys = self.get_key_tags()
+        return super(ListedYang, self)._diff(source, keys)
 
     def clear_subtree(self, ignores=None):
         keys = self.get_key_tags()
@@ -1750,6 +1833,27 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
                 self[key].set_operation("create", recursive=False, force=False)
                 _reduce = False
         return _reduce
+
+    def _diff(self, source):
+        """
+        Check if all keys of reference are going to be reduced and erase their values if yes
+        :param reference: ListYang
+        :return: boolean
+        """
+        _done = []
+        for key in self.keys():
+            _done.append(key)
+            if key in source.keys():
+                self[key]._diff(source[key])
+                if self[key].is_initialized() is False:
+                    self[key].delete()
+            else:
+                self[key].set_operation("create", recursive=False, force=False)
+        for key in source.keys():
+            if key not in _done:
+                item = source[key].empty_copy()
+                item.set_operation("delete", recursive=False, force=True)
+                self.add(item)
 
     def __merge__(self, source, execute=False):
         #FIXME: handle operation delete/remove
