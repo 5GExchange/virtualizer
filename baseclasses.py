@@ -850,8 +850,8 @@ class Yang(object):
 
     def diff(self, target):
         diff = target.full_copy()
-        target._diff(self)
-        return target
+        diff._diff(self)
+        return diff
 
     # def diff(self, target):
     #     """
@@ -1044,6 +1044,12 @@ class Leaf(Yang):
             self.set_operation("delete", recursive=False, force=True)
         elif (self.data is not None) and (source.data is None):
             self.set_operation("create", recursive=False, force=True)
+        elif isinstance(self.data, ET.Element) or isinstance(source.data, ET.Element):
+            try:
+                if ET.tostring(self.data) == ET.tostring(source.data):
+                    self.clear_data()
+            except:
+                self.set_operation("replace", recursive=False, force=True)
         elif self.get_as_text() != source.get_as_text():
             self.set_operation("replace", recursive=False, force=True)
         else:
@@ -1096,7 +1102,10 @@ class StringLeaf(Leaf):
                         # it works because version has the correct version as default value
                         logger.warning('Version are different!')
                 self.set_value(e_data.text)
+            if "operation" in e_data.attrib.keys():
+                self.set_operation(e_data.attrib["operation"], recursive=False, force=True)
             root.remove(e_data)
+
 
     def get_as_text(self, default=None):
         """
