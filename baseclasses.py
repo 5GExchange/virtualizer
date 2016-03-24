@@ -258,7 +258,7 @@ class Yang(object):
                     if k in reference.__dict__.keys():
                         if type(v) == type(reference.__dict__[k]):
                             if v.reduce(reference.__dict__[k]):
-                                v.delete()
+                                v.clear_data()
                             else:
                                 # v.set_operation("replace", recursive=False, force=False)
                                 _reduce = False
@@ -575,6 +575,12 @@ class Yang(object):
                 if isinstance(v, Yang) and k is not "_parent":
                     v.replace_operation(fromop, toop, recursive=recursive)
 
+    def clear_data(self):
+        _ignore = ['_parent', 'tag']
+        for k, v in self.__dict__.items():
+            if k not in _ignore:
+                if isinstance(v, Yang):
+                    v.clear_data()
 
     def is_initialized(self):
         """
