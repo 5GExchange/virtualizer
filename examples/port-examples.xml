@@ -106,6 +106,7 @@
                     <port_type>port-sap</port_type>
                     <sap>INTERNET</sap>
                     <addresses>
+                        <!-- note: the format below is a Python set: -->
                         <l4>{'tcp/22', 'tcp/80'}</l4>
                     </addresses>
                 </port>
@@ -116,6 +117,7 @@
                     <port_type>port-sap</port_type>
                     <sap>INTERNET</sap>
                     <addresses>
+                        <!-- note: the format below is a Python dict, where the values are tuples: -->
                         <l4>{'tcp/22': ('192.168.1.100', '1001'), 'tcp/80': ('192.168.1.150', '2001')}</l4>
                     </addresses>
                 </port>
@@ -233,7 +235,8 @@
                     <port_type>port-sap</port_type>
                     <sap>SAP100</sap>
                     <sap_data>
-                        <technology>('IEEE802.1q');</technology>
+                        <!-- note: the format below is a Python list: -->
+                        <technology>['IEEE802.1q']</technology>
                     </sap_data>
                 </port>
 
@@ -243,8 +246,43 @@
                     <port_type>port-sap</port_type>
                     <sap>SAP101</sap>
                     <sap_data>
-                        <technology>('IEEE802.1q': '0x00c', 'MPLS': 70, 'IEEE802.1q');</technology>
+                        <!-- note: the format below is a Python list, where the elements are tuples: -->
+                        <technology>[('IEEE802.1q', '0x00c'), ('MPLS', 70), ('IEEE802.1q')]</technology>
                     </sap_data>
+                </port>
+
+                <port>
+                    <id>15</id>
+                    <name>experimental: SAP port with VXLAN behind NAT</name>
+                    <port_type>port-sap</port_type>
+                    <sap>INTERNET</sap>
+                    <sap_data>
+                        <technology>('vxlan')</technology>
+                    </sap_data>
+                    <addresses>
+                        <l3>
+                            <id>addr1</id>
+                            <requested>private</requested>
+                            <provided>192.168.1.5/24</provided>
+                        </l3>
+                        <l3>
+                            <id>addr2</id>
+                            <requested>public</requested>
+                            <provided>8.8.8.10</provided>
+                        </l3>
+                    </addresses>
+                    <metadata>
+                        <key>vxlan_key</key>
+                        <value>11</value>
+                    </metadata>
+                    <metadata>
+                        <key>vxlan_localip</key>
+                        <value>10.1.2.10</value>
+                    </metadata>
+                    <metadata>
+                        <key>vxlan_remoteip</key>
+                        <value>10.0.2.108</value>
+                    </metadata>
                 </port>
 
             </ports>
