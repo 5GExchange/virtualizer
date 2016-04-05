@@ -1483,6 +1483,8 @@ class ListedYang(Yang):
         :param: -
         :return: boolean
         """
+        if self._operation is not None:
+            return True;
         for k, v in self.__dict__.items():
             if isinstance(v, Yang) and (k is not "_parent") and (k not in self._key_attributes):
                 if v.is_initialized():
@@ -1547,7 +1549,7 @@ class ListedYang(Yang):
         """
         inst = self.__class__()
         for key in self._key_attributes:
-            setattr(inst, key, getattr(self, key))
+            setattr(inst, key, getattr(self, key).full_copy())
         return inst
 
     def reduce(self, reference):
