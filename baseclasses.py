@@ -890,6 +890,16 @@ class Yang(object):
     #     remove.merge(add)
     #     return remove
 
+
+    def diff_failsafe(self, target):
+        base_xml = self.xml()
+        base = self.parse_from_text(base_xml)
+        candidate_xml = target.xml()
+        candidate = self.parse_from_text(candidate_xml)
+        diff = base.diff(candidate)
+        return diff
+
+
 class Leaf(Yang):
     """
     Class defining Leaf basis with attributes and methods
