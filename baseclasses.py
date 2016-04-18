@@ -1493,29 +1493,16 @@ class Leafref(StringLeaf):
         #     path_self = self.data
         # elif self
 
-
-        if (self.target is not None) and (source.target is not None):
-            if self.target.get_path() == source.target.get_path():
+        if (self.data is not None) and (source.data is not None):
+            if self.data == source.data:
                 self.clear_data()
-
-        elif (self.target is None) and (self.data is None) and (source.target is not None):
-            self.data = source.target.get_path()
-            self.set_operation("create", recursive=False, force=True)
-
-        elif (self.target is not None) and (source.target is None) and (source.data is None):
-            self.set_operation("update", recursive=False, force=True)
-
-        elif (self.data is not None) and (source.data is not None):
-            if self.data[0] == source.data[0]:
-                if self.data == source.data:
-                    self.clear_data()
-                else:
-                    self.set_operation("update", recursive=False, force=True)
             else:
-                if (self.walk_path(self.data).get_path() != source.walk_path(source.data).get_path()):
-                    self.set_operation("update", recursive=False, force=True)
-                else:
-                    self.clear_data()
+                self.set_operation("replace", recursive=False, force=True)
+        elif (self.data is None) and (source.data is not None):
+            self.data = source.data
+            self.set_operation("delete", recursive=False, force=True)
+        elif (self.data is not None) and (source.data is None):
+            self.set_operation("create", recursive=False, force=True)
 
     def __eq__(self, other):
         """
