@@ -554,14 +554,37 @@ class Yang(object):
 
         return node
 
+    def _tree_to_string(self, el, s="", ident=0):
+        attrs = []
+        subtrees = []
+        for subel in el:
+            if not list(subel):
+                optag = subel.tag
+                if subel.get("operation"):
+                    optag = subel.get("operation").upper() + ":" + optag
+                attrs.append(optag + "='" + subel.text + "'")
+            else:
+                subtrees.append(subel)
+
+        optag = el.tag
+        if el.get("operation"):
+            optag = el.get("operation").upper() + ":" + optag
+        s += ident*'    ' + optag
+        s += " " + " ".join(attrs)
+
+        for subtree in subtrees:
+            s += "\n"
+            s = self._tree_to_string(subtree, s, ident+1)
+
+        return s
+
     def __str__(self):
         """
-        Overide str methor to dump the class subtree as XML string
+        Dump the class subtree as readable string.
         :return: string
         """
-        # return self.xml()
-        # return self.get_as_text()
-        return self.html()
+        root = self._et(None, False, True)
+        return self._tree_to_string(root)
 
     def has_operation(self, operation):
         """
@@ -1551,7 +1574,7 @@ class ListedYang(Yang):
 
     def keys(self):
         """
-        Abstract method to get identifiers of class that inherit ListedYang 
+        Abstract method to get identifiers of class that inherit ListedYang
         """
         if len(self._key_attributes) > 1:
             keys = []
@@ -1562,7 +1585,7 @@ class ListedYang(Yang):
 
     def get_key_tags(self):
         """
-        Abstract method to get tags of class that inherit ListedYang 
+        Abstract method to get tags of class that inherit ListedYang
         """
         if len(self._key_attributes) > 1:
             tags = []
@@ -1630,7 +1653,7 @@ class ListedYang(Yang):
 
 class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
     """
-    Class to express list as dictionary 
+    Class to express list as dictionary
     """
 
     def __init__(self, tag, parent=None, type=None):
@@ -1698,7 +1721,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
 
     def keys(self):
         """
-        Returns indices of ListYang dictionary 
+        Returns indices of ListYang dictionary
         :param: -
         :return: list
         """
@@ -1714,7 +1737,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
 
     def iterkeys(self):
         """
-        Returns iterator of keys of ListYang dictionary 
+        Returns iterator of keys of ListYang dictionary
         :param: -
         :return: iterator
         """
@@ -1722,7 +1745,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
 
     def itervalues(self):
         """
-        Returns iterator of values of ListYang dictionary 
+        Returns iterator of values of ListYang dictionary
         :param: -
         :return: list
         """
@@ -1730,7 +1753,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
 
     def items(self):
         """
-        Returns items of ListYang dictionary 
+        Returns items of ListYang dictionary
         :param: -
         :return: list
         """
@@ -1738,7 +1761,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
 
     def iteritems(self):
         """
-        Returns iterator of items of ListYang dictionary 
+        Returns iterator of items of ListYang dictionary
         :param: -
         :return: list
         """
@@ -1746,7 +1769,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
 
     def has_key(self, key):  # PEP8 wants it with 'in' instead of 'has_key()'
         """
-        Returns if key is in ListYang dictionary 
+        Returns if key is in ListYang dictionary
         :param key: string
         :return: boolean
         """
@@ -1927,7 +1950,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
 
     def __eq__(self, other):
         """
-        Check if dict of other ListYang is equal 
+        Check if dict of other ListYang is equal
         :param other: ListYang
         :return: boolean
         """
