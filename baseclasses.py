@@ -631,12 +631,13 @@ class Yang(object):
         """
         return self._operation
 
-    def set_operation(self, operation, recursive=True, force=True):
+    def set_operation(self, operation, recursive=True, force=True, execute=False):
         """
         Defines operation for instance
         :param operation: string
         :param recursive: boolean, default is True; determines if children operations are also set or not
         :param force: boolean, determines if overwrite of attribute is enforced (True) or not
+        :param execute: boolean, determines if delete operations must be carried out (True) or just marked (False)
         :return: -
         """
         if operation not in ((None,) + __EDIT_OPERATION_TYPE_ENUMERATION__):
@@ -644,7 +645,7 @@ class Yang(object):
                                                                                                yang=self.get_as_text()))
         if force or (self._operation is None):
             self._operation = operation
-            if operation is "delete":
+            if operation is "delete" and execute:
                 self.clear_subtree()
         if recursive:
             for k, v in self.__dict__.items():
@@ -854,6 +855,7 @@ class Yang(object):
         :param root: ElementTree
         :return: -
         """
+
         for key, item in self.__dict__.items():
             if key is not "_parent":
                 if isinstance(item, Leaf):
@@ -865,7 +867,6 @@ class Yang(object):
                         itemparsed = itemClass.parse(self, object_)
                         if "operation" in object_.attrib.keys():
                             itemparsed.set_operation(object_.attrib["operation"], recursive=False, force=True)
-                            # itemparsed.set_operation(object_.attrib["operation"])
                         self.__dict__[key].add(itemparsed)
                         root.remove(object_)
                         object_ = root.find(key)
@@ -875,7 +876,6 @@ class Yang(object):
                         item._parse(self, object_)
                         if "operation" in object_.attrib.keys():
                             self.set_operation(object_.attrib["operation"], recursive=False, force=True)
-                            # self.set_operation(object_.attrib["operation"])
 
     def diff(self, target):
         diff = target.full_copy()
@@ -1971,12 +1971,13 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
                 return True
         return False
 
-    def set_operation(self, operation, recursive=True, force=True):
+    def set_operation(self, operation, recursive=True, force=True, execute=False):
         """
         Set operation for all items in ListYang dict`
         :param operation: string
         :param recursive: boolean, default is True; determines if children operations are also set or not
         :param force: boolean, determines if overwrite of attribute is enforced (True) or not
+        :param execute: boolean, determines if delete operations must be carried out (True) or just marked (False)
         :return: -
         """
         # super(ListYang, self).set_operation(operation, recursive=recursive, force=force)
