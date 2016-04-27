@@ -555,6 +555,8 @@ class Yang(object):
         return node
 
     def _tree_to_string(self, el, s="", ident=0):
+        if el is None: return ""
+
         attrs = []
         subtrees = []
         for subel in el:
@@ -562,7 +564,7 @@ class Yang(object):
                 optag = subel.tag
                 if subel.get("operation"):
                     optag = subel.get("operation").upper() + ":" + optag
-                attrs.append(optag + "='" + subel.text + "'")
+                attrs.append(optag + "='" + str(subel.text) + "'")
             else:
                 subtrees.append(subel)
 
