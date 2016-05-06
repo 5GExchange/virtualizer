@@ -700,7 +700,7 @@ class Yang(object):
         if other is None:
             return False
         if self is other:
-            logger.warning("__eq__ for the same objects self={self}; other={other}".format(self=self.get_as_text(), other=other.get_as_text()))
+            # logger.warning("__eq__ for the same objects self={self}; other={other}".format(self=self.get_as_text(), other=other.get_as_text()))
             return True
         eq = True
         # Check attributes
