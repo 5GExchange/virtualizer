@@ -1922,7 +1922,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         :param: -
         :return: -
         """
-        self._data = dict()
+        self._data = OrderedDict()
 
     def reduce(self, reference):
         """
