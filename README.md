@@ -30,24 +30,21 @@ The library consists of two main files:
 
 
 ## Installing
-To install the Virtualizer library in a system-wide setup, run:
-```sh
-$ sudo python setup.py install
-```
-
-To install it for just your user, run:
-```sh
-$ python setup.py install --user
-```
-
-### Installing for development
-To install the Virtualizer library for development purposes, run
+To install Virtualizer for **development** purposes, run:
 ```sh
 $ sudo python setup.py develop
 ```
 
 This will not actually install all the files in your system, but just link them 
 to your development environment, simplifying the code/deploy/test cycle.
+
+In order to install Virtualizer for **demo/production** purposes in a 
+system-wide setup, run:
+```sh
+$ sudo python setup.py install
+```
+Alternatively, append the `--user` flag to install it for just your user, 
+without root privileges being necessary.
 
 
 ## Usage examples
