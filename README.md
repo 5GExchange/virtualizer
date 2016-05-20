@@ -1,7 +1,6 @@
 # UNIFY virtualizer library
 
 ## Introduction
-
 This module is a Virtualizer data model implementation example library in
 Python for the [EU-FP7-UNIFY](http://fp7-unify.eu/) project.
 
@@ -29,14 +28,27 @@ The library consists of two main files:
 * baseclasses.py: contains the common components for the library, like the base
   Yang class for generic parsing, comparison, etc.
 
+
 ## Installing
-You can install this package with the following command:
+To install the Virtualizer library in a system-wide setup, run:
 ```sh
-$ python setup.py install
+$ sudo python setup.py install
 ```
 
-For installing without root privileges, append the `--user` flag to the end of
-this command.
+To install it for just your user, run:
+```sh
+$ python setup.py install --user
+```
+
+### Installing for development
+To install the Virtualizer library for development purposes, run
+```sh
+$ sudo python setup.py develop
+```
+
+This will not actually install all the files in your system, but just link them 
+to your development environment, simplifying the code/deploy/test cycle.
+
 
 ## Usage examples
 * `A = Virtualizer()`: init an empty virtualizer object
@@ -50,6 +62,7 @@ this command.
   without execution
 * `C = A.diff(B)`: return a diff to go from A to B
 * `A.patch(C)`: apply C on A, i.e., A.patch(A.diff(B)) == B
+
 
 ## Additional information
 * [UNIFY Deliverables](http://fp7-unify.eu/index.php/results.html#Deliverables)
