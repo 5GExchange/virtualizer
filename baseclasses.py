@@ -119,6 +119,49 @@ class Yang(object):
         raise ValueError("Attrib={attrib} cannot be found in self={self} and other={v}".format(
                 self=self.get_as_text(), v=v.get_as_text()))
 
+    def has_attr_with_value(self, attrib, value, ignore_case=True):
+        if hasattr(self, attrib):
+            if ignore_case and (self.__dict_[attrib].get_as_text().lower() == value.lower()):
+                return True
+            return self.__dict_[attrib].get_as_text() == value
+        return False
+
+    def has_attrs_with_values(self, av_list, ignore_case=True):
+        if type(av_list) is tuple:
+            av_list = list(av_list)
+        l = av_list.pop(0)
+        if type (l) in (list, tuple):
+            attr = l[0]
+        else:
+            attr = l
+        _return = True
+        if hasattr(self, attr):
+            if type (l) in (list, tuple):
+                if type(l[1]) in (list, tuple):
+                    _return = self.__dict__[attr].has_attrs_with_values(l[1], ignore_case)  # recursive structure call
+                    if _return and len(av_list) > 0:
+                        return _return and self.has_attrs_with_values(av_list, ignore_case)
+                    else:
+                        return _return
+                else:
+                    if ignore_case and (self.__dict__[attr].get_as_text().lower() == l[1].lower()):
+                        if len(av_list) > 0:
+                            return self.has_attrs_with_values(av_list, ignore_case)
+                        else:
+                            return _return
+                    if self.__dict__[attr].get_as_text() == l[1]:
+                        if len(av_list) > 0:
+                            return self.has_attrs_with_values(av_list, ignore_case)
+                        else:
+                            return True
+            else:
+                if len(av_list) > 0:
+                    return self.has_attrs_with_values(av_list, ignore_case)
+                else:
+                    return True
+        return False
+
+
     def get_parent(self, level=1, tag=None):
         """
         Returns the parent in the class subtree.
