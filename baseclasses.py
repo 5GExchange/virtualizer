@@ -127,39 +127,47 @@ class Yang(object):
         return False
 
     def has_attrs_with_values(self, av_list, ignore_case=True):
-        if type(av_list) is tuple:
-            av_list = list(av_list)
-        l = av_list.pop(0)
-        if type (l) in (list, tuple):
-            attr = l[0]
-        else:
-            attr = l
-        _return = True
-        if hasattr(self, attr):
-            if type (l) in (list, tuple):
-                if type(l[1]) in (list, tuple):
-                    _return = self.__dict__[attr].has_attrs_with_values(l[1], ignore_case)  # recursive structure call
-                    if _return and len(av_list) > 0:
-                        return _return and self.has_attrs_with_values(av_list, ignore_case)
-                    else:
-                        return _return
-                else:
-                    if ignore_case and (self.__dict__[attr].get_as_text().lower() == l[1].lower()):
-                        if len(av_list) > 0:
-                            return self.has_attrs_with_values(av_list, ignore_case)
+        try:
+            if type(av_list) is tuple:
+                av_list = list(av_list)
+            if type (av_list[0]) in (list, tuple):
+                l = av_list.pop(0)
+                attr = l[0]
+            elif (len(av_list) == 2) and (isinstance(av_list[1], basestring)): # attrib and value check
+                l = list(av_list)
+                av_list = ()
+                attr = l[0]
+            else:
+                l = av_list.pop(0)
+                attr = l
+            _return = True
+            if hasattr(self, attr):
+                if type (l) in (list, tuple):
+                    if type(l[1]) in (list, tuple):
+                        _return = self.__dict__[attr].has_attrs_with_values(l[1], ignore_case)  # recursive structure call
+                        if _return and len(av_list) > 0:
+                            return _return and self.has_attrs_with_values(av_list, ignore_case)
                         else:
                             return _return
-                    if self.__dict__[attr].get_as_text() == l[1]:
-                        if len(av_list) > 0:
-                            return self.has_attrs_with_values(av_list, ignore_case)
-                        else:
-                            return True
-            else:
-                if len(av_list) > 0:
-                    return self.has_attrs_with_values(av_list, ignore_case)
+                    else:
+                        if ignore_case and (self.__dict__[attr].get_as_text().lower() == l[1].lower()):
+                            if len(av_list) > 0:
+                                return self.has_attrs_with_values(av_list, ignore_case)
+                            else:
+                                return _return
+                        if self.__dict__[attr].get_as_text() == l[1]:
+                            if len(av_list) > 0:
+                                return self.has_attrs_with_values(av_list, ignore_case)
+                            else:
+                                return True
                 else:
-                    return True
-        return False
+                    if (type(av_list) in (list, tuple)) and (len(av_list)>0):
+                        return self.has_attrs_with_values(av_list, ignore_case)
+                    else:
+                        return True
+            return False
+        except:
+            return False
 
 
     def get_parent(self, level=1, tag=None):
