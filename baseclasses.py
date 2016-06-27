@@ -119,6 +119,57 @@ class Yang(object):
         raise ValueError("Attrib={attrib} cannot be found in self={self} and other={v}".format(
                 self=self.get_as_text(), v=v.get_as_text()))
 
+    def has_attr_with_value(self, attrib, value, ignore_case=True):
+        if hasattr(self, attrib):
+            if ignore_case and (self.__dict_[attrib].get_as_text().lower() == value.lower()):
+                return True
+            return self.__dict_[attrib].get_as_text() == value
+        return False
+
+    def has_attrs_with_values(self, av_list, ignore_case=True):
+        try:
+            if type(av_list) is tuple:
+                av_list = list(av_list)
+            if type (av_list[0]) in (list, tuple):
+                l = av_list.pop(0)
+                attr = l[0]
+            elif (len(av_list) == 2) and (isinstance(av_list[1], basestring)): # attrib and value check
+                l = list(av_list)
+                av_list = ()
+                attr = l[0]
+            else:
+                l = av_list.pop(0)
+                attr = l
+            _return = True
+            if hasattr(self, attr):
+                if type (l) in (list, tuple):
+                    if type(l[1]) in (list, tuple):
+                        _return = self.__dict__[attr].has_attrs_with_values(l[1], ignore_case)  # recursive structure call
+                        if _return and len(av_list) > 0:
+                            return _return and self.has_attrs_with_values(av_list, ignore_case)
+                        else:
+                            return _return
+                    else:
+                        if ignore_case and (self.__dict__[attr].get_as_text().lower() == l[1].lower()):
+                            if len(av_list) > 0:
+                                return self.has_attrs_with_values(av_list, ignore_case)
+                            else:
+                                return _return
+                        if self.__dict__[attr].get_as_text() == l[1]:
+                            if len(av_list) > 0:
+                                return self.has_attrs_with_values(av_list, ignore_case)
+                            else:
+                                return True
+                else:
+                    if (type(av_list) in (list, tuple)) and (len(av_list)>0):
+                        return self.has_attrs_with_values(av_list, ignore_case)
+                    else:
+                        return True
+            return False
+        except:
+            return False
+
+
     def get_parent(self, level=1, tag=None):
         """
         Returns the parent in the class subtree.
@@ -553,14 +604,63 @@ class Yang(object):
 
         return node
 
+    def setHighlightSyntax(self, enabled):
+        """ Sets whether syntax highlighting should be enabled for string
+        output.
+        :param enabled: True for enabling syntax highlighting, False for
+        disabling """
+        class DefaultSyntaxHighlight:
+            Tag = "\033[1;32m"
+            Attr = "\033[36m"
+            Operation = "\033[1;31m"
+            Reset = "\033[0m"
+        class DisabledSyntaxHighlight:
+            Tag = ""
+            Attr = ""
+            Operation = ""
+            Reset = ""
+        if enabled:
+            self._sh = DefaultSyntaxHighlight()
+        else:
+            self._sh = DisabledSyntaxHighlight()
+
+    def _tree_to_string(self, el, s="", ident=0):
+        if el is None: return ""
+        if not hasattr(self, '_sh'):
+            self.setHighlightSyntax(True)
+
+        attrs = []
+        subtrees = []
+        for subel in el:
+            if not list(subel):
+                optag = subel.tag
+                if subel.get("operation"):
+                    optag = subel.get("operation").upper() + ":" + optag
+                attrs.append(self._sh.Attr + optag + self._sh.Reset + "=" + \
+                    "'" + str(subel.text) + "'")
+            else:
+                subtrees.append(subel)
+
+        optag = self._sh.Tag + el.tag + self._sh.Reset
+        if el.get("operation"):
+            optag = self._sh.Operation + el.get("operation").upper() + ":" + \
+                self._sh.Reset + optag
+        s += ident*'    ' + optag
+        s += " " + " ".join(attrs)
+
+        for subtree in subtrees:
+            s += "\n"
+            s = self._tree_to_string(subtree, s, ident+1)
+
+        return s
+
     def __str__(self):
         """
-        Overide str methor to dump the class subtree as XML string
+        Dump the class subtree as readable string.
         :return: string
         """
-        # return self.xml()
-        # return self.get_as_text()
-        return self.html()
+        root = self._et(None, False, True)
+        return self._tree_to_string(root)
 
     def has_operation(self, operation):
         """
@@ -607,12 +707,13 @@ class Yang(object):
         """
         return self._operation
 
-    def set_operation(self, operation, recursive=True, force=True):
+    def set_operation(self, operation, recursive=True, force=True, execute=False):
         """
         Defines operation for instance
         :param operation: string
         :param recursive: boolean, default is True; determines if children operations are also set or not
         :param force: boolean, determines if overwrite of attribute is enforced (True) or not
+        :param execute: boolean, determines if delete operations must be carried out (True) or just marked (False)
         :return: -
         """
         if operation not in ((None,) + __EDIT_OPERATION_TYPE_ENUMERATION__):
@@ -620,7 +721,7 @@ class Yang(object):
                                                                                                yang=self.get_as_text()))
         if force or (self._operation is None):
             self._operation = operation
-            if operation is "delete":
+            if operation is "delete" and execute:
                 self.clear_subtree()
         if recursive:
             for k, v in self.__dict__.items():
@@ -676,7 +777,7 @@ class Yang(object):
         if other is None:
             return False
         if self is other:
-            logger.warning("__eq__ for the same objects self={self}; other={other}".format(self=self.get_as_text(), other=other.get_as_text()))
+            # logger.warning("__eq__ for the same objects self={self}; other={other}".format(self=self.get_as_text(), other=other.get_as_text()))
             return True
         eq = True
         # Check attributes
@@ -830,6 +931,7 @@ class Yang(object):
         :param root: ElementTree
         :return: -
         """
+
         for key, item in self.__dict__.items():
             if key is not "_parent":
                 if isinstance(item, Leaf):
@@ -841,7 +943,6 @@ class Yang(object):
                         itemparsed = itemClass.parse(self, object_)
                         if "operation" in object_.attrib.keys():
                             itemparsed.set_operation(object_.attrib["operation"], recursive=False, force=True)
-                            # itemparsed.set_operation(object_.attrib["operation"])
                         self.__dict__[key].add(itemparsed)
                         root.remove(object_)
                         object_ = root.find(key)
@@ -851,7 +952,6 @@ class Yang(object):
                         item._parse(self, object_)
                         if "operation" in object_.attrib.keys():
                             self.set_operation(object_.attrib["operation"], recursive=False, force=True)
-                            # self.set_operation(object_.attrib["operation"])
 
     def diff(self, target):
         diff = target.full_copy()
@@ -888,6 +988,16 @@ class Yang(object):
     #
     #     remove.merge(add)
     #     return remove
+
+
+    def diff_failsafe(self, target):
+        base_xml = self.xml()
+        base = self.parse_from_text(base_xml)
+        candidate_xml = target.xml()
+        candidate = self.parse_from_text(candidate_xml)
+        diff = base.diff(candidate)
+        return diff
+
 
 class Leaf(Yang):
     """
@@ -1460,6 +1570,39 @@ class Leafref(StringLeaf):
         if self.target is not None:
             self.target.unset_referred(self)
 
+    def clear_data(self):
+        """
+        Erases data defining it as None
+        :param: -
+        :return: -
+        """
+        self.data = None
+        self.target = None;
+
+    def _diff(self, source):
+        """
+        :param source: Yang
+        :return: -
+        """
+
+        # self_path = ""
+        # if self.target is not None:
+        #     path_self = self.target.get_path()
+        # elif self.data[0] == '/':
+        #     path_self = self.data
+        # elif self
+
+        if (self.data is not None) and (source.data is not None):
+            if self.data == source.data:
+                self.clear_data()
+            else:
+                self.set_operation("replace", recursive=False, force=True)
+        elif (self.data is None) and (source.data is not None):
+            self.data = source.data
+            self.set_operation("delete", recursive=False, force=True)
+        elif (self.data is not None) and (source.data is None):
+            self.set_operation("create", recursive=False, force=True)
+
     def __eq__(self, other):
         """
         Check if other leaf has the same attributes and values, returns True if yes
@@ -1488,6 +1631,8 @@ class ListedYang(Yang):
         :param: -
         :return: boolean
         """
+        if self._operation is not None:
+            return True;
         for k, v in self.__dict__.items():
             if isinstance(v, Yang) and (k is not "_parent") and (k not in self._key_attributes):
                 if v.is_initialized():
@@ -1505,7 +1650,7 @@ class ListedYang(Yang):
 
     def keys(self):
         """
-        Abstract method to get identifiers of class that inherit ListedYang 
+        Abstract method to get identifiers of class that inherit ListedYang
         """
         if len(self._key_attributes) > 1:
             keys = []
@@ -1516,7 +1661,7 @@ class ListedYang(Yang):
 
     def get_key_tags(self):
         """
-        Abstract method to get tags of class that inherit ListedYang 
+        Abstract method to get tags of class that inherit ListedYang
         """
         if len(self._key_attributes) > 1:
             tags = []
@@ -1552,7 +1697,7 @@ class ListedYang(Yang):
         """
         inst = self.__class__()
         for key in self._key_attributes:
-            setattr(inst, key, getattr(self, key))
+            setattr(inst, key, getattr(self, key).full_copy())
         return inst
 
     def reduce(self, reference):
@@ -1584,7 +1729,7 @@ class ListedYang(Yang):
 
 class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
     """
-    Class to express list as dictionary 
+    Class to express list as dictionary
     """
 
     def __init__(self, tag, parent=None, type=None):
@@ -1652,7 +1797,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
 
     def keys(self):
         """
-        Returns indices of ListYang dictionary 
+        Returns indices of ListYang dictionary
         :param: -
         :return: list
         """
@@ -1668,7 +1813,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
 
     def iterkeys(self):
         """
-        Returns iterator of keys of ListYang dictionary 
+        Returns iterator of keys of ListYang dictionary
         :param: -
         :return: iterator
         """
@@ -1676,7 +1821,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
 
     def itervalues(self):
         """
-        Returns iterator of values of ListYang dictionary 
+        Returns iterator of values of ListYang dictionary
         :param: -
         :return: list
         """
@@ -1684,7 +1829,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
 
     def items(self):
         """
-        Returns items of ListYang dictionary 
+        Returns items of ListYang dictionary
         :param: -
         :return: list
         """
@@ -1692,7 +1837,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
 
     def iteritems(self):
         """
-        Returns iterator of items of ListYang dictionary 
+        Returns iterator of items of ListYang dictionary
         :param: -
         :return: list
         """
@@ -1700,7 +1845,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
 
     def has_key(self, key):  # PEP8 wants it with 'in' instead of 'has_key()'
         """
-        Returns if key is in ListYang dictionary 
+        Returns if key is in ListYang dictionary
         :param key: string
         :return: boolean
         """
@@ -1827,7 +1972,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         :param: -
         :return: -
         """
-        self._data = dict()
+        self._data = OrderedDict()
 
     def reduce(self, reference):
         """
@@ -1881,7 +2026,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
 
     def __eq__(self, other):
         """
-        Check if dict of other ListYang is equal 
+        Check if dict of other ListYang is equal
         :param other: ListYang
         :return: boolean
         """
@@ -1902,12 +2047,13 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
                 return True
         return False
 
-    def set_operation(self, operation, recursive=True, force=True):
+    def set_operation(self, operation, recursive=True, force=True, execute=False):
         """
         Set operation for all items in ListYang dict`
         :param operation: string
         :param recursive: boolean, default is True; determines if children operations are also set or not
         :param force: boolean, determines if overwrite of attribute is enforced (True) or not
+        :param execute: boolean, determines if delete operations must be carried out (True) or just marked (False)
         :return: -
         """
         # super(ListYang, self).set_operation(operation, recursive=recursive, force=force)
