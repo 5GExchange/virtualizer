@@ -247,7 +247,6 @@ class Yang(object):
                     v.set_parent(self)
                     v.update_parent()
 
-
     def reduce(self, reference, ignores=None):
         """
         Delete instances which equivalently exist in the reference tree.
@@ -1840,7 +1839,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         for key in self.keys():
             if key in reference.keys():
                 if self[key].reduce(reference[key]):
-                    self[key].delete()
+                    self[key].clear_data()
                 else:
                     # self[key].set_operation("replace", recursive=False, force=False)
                     _reduce = False
@@ -1861,7 +1860,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
             if key in source.keys():
                 self[key]._diff(source[key])
                 if self[key].is_initialized() is False:
-                    self[key].delete()
+                    self[key].clear_data()
             else:
                 self[key].set_operation("create", recursive=False, force=False)
         for key in source.keys():
@@ -1926,7 +1925,6 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         # super(ListYang, self).set_operation(operation, recursive=recursive, force=force)
         for key in self._data.keys():
             self._data[key].replace_operation(fromop, toop, recursive=recursive)
-
 
     def bind(self, relative=False, reference=None):
         for v in self.values():
