@@ -1984,7 +1984,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         for key in self.keys():
             if key in reference.keys():
                 if self[key].reduce(reference[key]):
-                    self[key].clear_data()
+                    self[key].delete()
                 else:
                     # self[key].set_operation("replace", recursive=False, force=False)
                     _reduce = False
@@ -2005,7 +2005,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
             if key in source.keys():
                 self[key]._diff(source[key])
                 if self[key].is_initialized() is False:
-                    self[key].clear_data()
+                    self[key].delete()
             else:
                 self[key].set_operation("create", recursive=False, force=False)
         for key in source.keys():
