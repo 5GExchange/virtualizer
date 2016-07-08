@@ -1,4 +1,4 @@
-#    Filename: virtualizer.py		 Created: 2016-03-18  19:56:13
+#    Filename: virtualizer.py		 Created: 2016-07-08  19:29:40
 #    This file was automatically created by a pyang plugin (PNC) developed at Ericsson Hungary Ltd., 2015
 #    Authors: Robert Szabo, Balazs Miriszlai, Akos Recse, Raphael Vicente Rosa
 #    Credits: Robert Szabo, Raphael Vicente Rosa, David Jocha, Janos Elek, Balazs Miriszlai, Akos Recse
@@ -9,11 +9,12 @@
 #    Prefix: virtualizer
 #    Organization: ETH
 #    Contact: Robert Szabo <robert.szabo@ericsson.com>
-#    Description: V5.0: Common port configuration were added to the yang model from the metadata fields
+#    Description: V5.0: Groupping of construct for virtualizer to enable virtualizers
+#				  zone attribute introduced for embedding
 
 __copyright__ = "Copyright 2015, Ericsson Hungary Ltd."
 __license__ = "Apache License, Version 2.0"
-__version__ = "2016-02-24"
+__version__ = "2016-07-08"
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -229,9 +230,9 @@ class GroupingLinks(Yang):
 
 # YANG construct: grouping software-resource
 class GroupingSoftware_resource(Yang):
-    def __init__(self, tag, parent=None, cpu=None, mem=None, storage=None, cost=None):
+    def __init__(self, tag, parent=None, cpu=None, mem=None, storage=None, cost=None, zone=None):
         super(GroupingSoftware_resource, self).__init__(tag, parent)
-        self._sorted_children = ["cpu", "mem", "storage", "cost"]
+        self._sorted_children = ["cpu", "mem", "storage", "cost", "zone"]
         # yang construct: leaf
         self.cpu = StringLeaf("cpu", parent=self, value=cpu, mandatory=True)
         """:type: StringLeaf"""
@@ -243,6 +244,9 @@ class GroupingSoftware_resource(Yang):
         """:type: StringLeaf"""
         # yang construct: leaf
         self.cost = StringLeaf("cost", parent=self, value=cost)
+        """:type: StringLeaf"""
+        # yang construct: leaf
+        self.zone = StringLeaf("zone", parent=self, value=zone)
         """:type: StringLeaf"""
 
 
@@ -312,6 +316,26 @@ class GroupingInfra_node(GroupingNode, GroupingFlowtable):
             self.capabilities = capabilities
         else:
             self.capabilities = Infra_nodeCapabilities(parent=self, tag="capabilities")
+
+
+# YANG construct: grouping virtualizer
+class GroupingVirtualizer(GroupingId_name, GroupingLinks, GroupingMetadata):
+    """Grouping for a single virtualizer"""
+    def __init__(self, tag, parent=None, id=None, name=None, nodes=None, links=None, version='2016-07-08; compiled at 2016-07-08  19:29:40'):
+        GroupingId_name.__init__(self, tag, parent, id, name)
+        GroupingLinks.__init__(self, tag, parent, links)
+        GroupingMetadata.__init__(self, tag, parent)
+        self._sorted_children = ["id", "name", "nodes", "links", "metadata", "version"]
+        # yang construct: container
+        self.nodes = None
+        """:type: VirtualizerNodes"""
+        if nodes is not None:
+            self.nodes = nodes
+        else:
+            self.nodes = VirtualizerNodes(parent=self, tag="nodes")
+        # yang construct: leaf
+        self.version = StringLeaf("version", parent=self, value=version)
+        """:type: StringLeaf"""
 
 
 # YANG construct: list metadata
@@ -517,9 +541,9 @@ class NodePorts(Yang):
 
 # YANG construct: container resources
 class Software_resource(GroupingSoftware_resource):
-    def __init__(self, tag="resources", parent=None, cpu=None, mem=None, storage=None, cost=None):
-        GroupingSoftware_resource.__init__(self, tag, parent, cpu, mem, storage, cost)
-        self._sorted_children = ["cpu", "mem", "storage", "cost"]
+    def __init__(self, tag="resources", parent=None, cpu=None, mem=None, storage=None, cost=None, zone=None):
+        GroupingSoftware_resource.__init__(self, tag, parent, cpu, mem, storage, cost, zone)
+        self._sorted_children = ["cpu", "mem", "storage", "cost", "zone"]
 
 
 # YANG construct: container NF_instances
@@ -543,26 +567,6 @@ class Infra_nodeCapabilities(Yang):
             self.supported_NFs = Nodes(parent=self, tag="supported_NFs")
 
 
-# YANG construct: container virtualizer
-class Virtualizer(GroupingId_name, GroupingLinks, GroupingMetadata):
-    """Container for a single virtualizer"""
-    def __init__(self, tag="virtualizer", parent=None, id=None, name=None, nodes=None, links=None, version='2016-02-24; compiled at 2016-03-18  19:56:13'):
-        GroupingId_name.__init__(self, tag, parent, id, name)
-        GroupingLinks.__init__(self, tag, parent, links)
-        GroupingMetadata.__init__(self, tag, parent)
-        self._sorted_children = ["id", "name", "nodes", "links", "metadata", "version"]
-        # yang construct: container
-        self.nodes = None
-        """:type: VirtualizerNodes"""
-        if nodes is not None:
-            self.nodes = nodes
-        else:
-            self.nodes = VirtualizerNodes(parent=self, tag="nodes")
-        # yang construct: leaf
-        self.version = StringLeaf("version", parent=self, value=version)
-        """:type: StringLeaf"""
-
-
 # YANG construct: container nodes
 class VirtualizerNodes(Yang):
     def __init__(self, tag="nodes", parent=None):
@@ -583,4 +587,11 @@ class VirtualizerNodes(Yang):
 
     def __iter__(self):
         return self.node.itervalues()
+
+
+# YANG construct: container virtualizer
+class Virtualizer(GroupingVirtualizer):
+    def __init__(self, tag="virtualizer", parent=None, id=None, name=None, nodes=None, links=None, version='2016-07-08; compiled at 2016-07-08  19:29:40'):
+        GroupingVirtualizer.__init__(self, tag, parent, id, name, nodes, links, version)
+        self._sorted_children = ["id", "name", "nodes", "links", "metadata", "version"]
 

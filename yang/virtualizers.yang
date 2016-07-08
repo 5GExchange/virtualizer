@@ -1,0 +1,21 @@
+module virtualizers {
+  namespace "urn:unify:virtualizers";
+  prefix "virtualizers";
+  import virtualizer { prefix v; }
+  
+  organization "ETH";
+  contact "Robert Szabo <robert.szabo@ericsson.com>";
+
+  revision "2016-07-08" {
+    description "First release";
+  }
+
+  container virtualizers {
+    description "Container for a list of virtualizers";
+    list virtualizer{ // infra nodes
+      key "id";
+      uses v:virtualizer;
+    }
+    
+  }
+}

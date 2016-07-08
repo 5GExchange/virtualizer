@@ -4,6 +4,10 @@ module virtualizer {
   organization "ETH";
   contact "Robert Szabo <robert.szabo@ericsson.com>";
 
+  revision "2016-07-08" {
+    description "V5.0: Groupping of construct for virtualizer to enable virtualizers; zone attribute introduced for embedding";
+  }
+
   revision "2016-02-24" {
     description "V5.0: Common port configuration were added to the yang model from the metadata fields";
   }
@@ -227,6 +231,11 @@ module virtualizer {
       type string;
       mandatory false;
     }
+    leaf zone {
+      description "Availability/geographic zone.";
+      type string;
+      mandatory false;
+    }
   }
 
   grouping node {
@@ -273,8 +282,8 @@ module virtualizer {
 
   //======================== NF-FG: Virtualizer and the Mapped request ================================
 
-  container virtualizer {
-    description "Container for a single virtualizer";
+   grouping virtualizer {
+    description "Grouping for a single virtualizer";
     uses id-name {
       refine id {
         mandatory true;
@@ -292,6 +301,10 @@ module virtualizer {
       description "yang and virtualizer library version";
       type string;
     }
+  }
+
+  container virtualizer {
+    uses virtualizer;
   }
 
 }
