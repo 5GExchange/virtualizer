@@ -4,6 +4,6 @@ setup(name='virtualizer',
       version='5.0.0',
       description='UNIFY virtualizer',
       author='Ericsson',
-      packages=['virtualizer'],
+      py_modules=['virtualizer', 'baseclasses', 'virtualizer_utils'],
       scripts=['virtualizer_color']
 )
