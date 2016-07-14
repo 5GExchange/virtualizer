@@ -128,9 +128,11 @@ class Yang(object):
 
     def has_attrs_with_values(self, av_list, ignore_case=True):
         try:
+            if len(av_list) == 1 and type(av_list[0]) in (list, tuple):
+                return self.has_attrs_with_values(av_list[0], ignore_case)
             if type(av_list) is tuple:
                 av_list = list(av_list)
-            if type (av_list[0]) in (list, tuple):
+            if type(av_list[0]) is list:
                 l = av_list.pop(0)
                 attr = l[0]
             elif (len(av_list) == 2) and (isinstance(av_list[1], basestring)): # attrib and value check
@@ -162,7 +164,7 @@ class Yang(object):
                                 return True
                 else:
                     if (type(av_list) in (list, tuple)) and (len(av_list)>0):
-                        return self.has_attrs_with_values(av_list, ignore_case)
+                        return self.__dict__[attr].has_attrs_with_values(av_list, ignore_case)
                     else:
                         return True
             return False
@@ -297,7 +299,6 @@ class Yang(object):
                 if isinstance(v, Yang):
                     v.set_parent(self)
                     v.update_parent()
-
 
     def reduce(self, reference, ignores=None):
         """
@@ -2073,10 +2074,32 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         for key in self._data.keys():
             self._data[key].replace_operation(fromop, toop, recursive=recursive)
 
-
     def bind(self, relative=False, reference=None):
         for v in self.values():
             v.bind(relative=relative, reference=reference)
+
+    def has_attrs_with_values(self, av_list, ignore_case=True):
+        try:
+            if len(av_list) == 1 and type(av_list[0]) in (list, tuple):
+                return self.has_attrs_with_values(av_list[0], ignore_case)
+            if type(av_list) is tuple:
+                av_list = list(av_list)
+            if type(av_list[0]) is list:
+                l = av_list.pop(0)
+                attr = l[0]
+            elif (len(av_list) == 2) and (isinstance(av_list[1], basestring)): # attrib and value check
+                l = list(av_list)
+                av_list = ()
+                attr = l[0]
+            else:
+                l = av_list.pop(0)
+                attr = l
+            _return = True
+            if self.has_key(attr):
+                return self[attr].has_attrs_with_values(av_list, ignore_case)
+            return False
+        except:
+            return False
 
 
 class FilterYang(Yang):
