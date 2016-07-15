@@ -25,7 +25,12 @@ def combine(self, source):
             for virt1_port in pairs.keys():
                 self.nodes[virt1_node].ports[virt1_port].port_type='port-abstract'
                 self.nodes[virt2_node].ports[pairs[virt1_port]].port_type='port-abstract'
-                link = virtualizer.Link(id='automaicliadded_'+virt1_port+'_'+pairs[virt1_port],
+                id_int = 0
+                id='automaicliadded_'+virt1_port+'_'+pairs[virt1_port]
+                while id in self.links.link:
+                    id='automaicliadded_'+virt1_port+'_'+pairs[virt1_port]+'-'+str(id_int)
+                    id_int += 1
+                link = virtualizer.Link(id=id,
                                         name='aa_link',
                                         resources=virtualizer.Link_resource(delay=0, bandwidth=0)
                                         )
@@ -33,13 +38,3 @@ def combine(self, source):
                 self.links.add(link)
                 link.src = link.src.get_rel_path(self.nodes[virt1_node].ports[virt1_port])
                 link.dst = link.dst.get_rel_path(self.nodes[virt2_node].ports[pairs[virt1_port]])
-
-                # link = virtualizer.Link(id='automaicliadded_'+pairs[virt1_port]+'_'+virt1_port,
-                #                         name='aa_link',
-                #                         resources=virtualizer.Link_resource(delay=0, bandwidth=0)
-                #                         )
-                #
-                #
-                # self.links.add(link)
-                # link.src = link.dst.get_rel_path(self.nodes[virt2_node].ports[pairs[virt1_port]])
-                # link.dst = link.src.get_rel_path(self.nodes[virt1_node].ports[virt1_port])
