@@ -7,34 +7,55 @@ import copy
 def combine(self, source):
     old_self = copy.deepcopy(self)
     self.merge(source)
-    for virt1_node in old_self.nodes.node:
-        virt1_saps = {}
-        for port in old_self.nodes[virt1_node].ports.port:
-            if old_self.nodes[virt1_node].ports[port].port_type.get_as_text() == 'port-sap':
-                virt1_saps[old_self.nodes[virt1_node].ports[port].sap.get_as_text()]=old_self.nodes[virt1_node].ports[port].id.get_as_text()
 
-        for virt2_node in source.nodes.node:
-            virt2_saps = {}
+    virt1_saps = {}
+    for infra1 in old_self.nodes.node:
+        for port in old_self.nodes[infra1].ports.port:
+            if old_self.nodes[infra1].ports[port].port_type.get_as_text() == 'port-sap':
+                virt1_saps[old_self.nodes[infra1].ports[port].sap.get_as_text()]=(infra1, port)
 
-            for port in source.nodes[virt2_node].ports.port:
-                if source.nodes[virt2_node].ports[port].port_type.get_as_text() == 'port-sap':
-                    virt2_saps[source.nodes[virt2_node].ports[port].sap.get_as_text()]=source.nodes[virt2_node].ports[port].id.get_as_text()
+    virt2_saps = {}
+    for infra2 in source.nodes.node:
+        for port in source.nodes[infra2].ports.port:
+            if source.nodes[infra2].ports[port].port_type.get_as_text() == 'port-sap':
+                virt2_saps[source.nodes[infra2].ports[port].sap.get_as_text()]=(infra2, port)
 
-            pairs = {virt1_saps[k]: virt2_saps[k] for k in virt1_saps.keys() if k in virt2_saps.keys()}
 
-            for virt1_port in pairs.keys():
-                self.nodes[virt1_node].ports[virt1_port].port_type='port-abstract'
-                self.nodes[virt2_node].ports[pairs[virt1_port]].port_type='port-abstract'
-                id_int = 0
-                id='automaicliadded_'+virt1_port+'_'+pairs[virt1_port]
-                while id in self.links.link:
-                    id='automaicliadded_'+virt1_port+'_'+pairs[virt1_port]+'-'+str(id_int)
-                    id_int += 1
-                link = virtualizer.Link(id=id,
-                                        name='aa_link',
-                                        resources=virtualizer.Link_resource(delay=0, bandwidth=0)
-                                        )
+    pairs = {virt1_saps[k]: virt2_saps[k] for k in virt1_saps.keys() if k in virt2_saps.keys()}
 
-                self.links.add(link)
-                link.src = link.src.get_rel_path(self.nodes[virt1_node].ports[virt1_port])
-                link.dst = link.dst.get_rel_path(self.nodes[virt2_node].ports[pairs[virt1_port]])
+    for key in pairs.keys():
+        infra1 = key[0]
+        port1 = key[1]
+        infra2 = pairs[key][0]
+        port2 = pairs[key][1]
+        pass
+
+        self.nodes[infra1].ports[port1].port_type='port-abstract'
+        self.nodes[infra2].ports[port2].port_type='port-abstract'
+
+        id_int = 0
+        id_fw = 'automaticallyadded_'+infra1+'-'+port1+'_'+infra2+'-'+port2
+        id_bw = 'automaticallyadded_'+infra2+'-'+port2+'_'+infra1+'-'+port1
+
+        while id_fw in self.links.link or id_bw in self.links.link:
+            id_fw = 'automaticallyadded_'+infra1+'-'+port1+'_'+infra2+'-'+port2+'_'+id_int
+            id_bw = 'automaticallyadded_'+infra2+'-'+port2+'_'+infra1+'-'+port1+'_'+id_int
+            id_int += 1
+
+
+        link_fw = virtualizer.Link(id=id_fw,
+                                   name='aa_link',
+                                   resources=virtualizer.Link_resource(delay=0, bandwidth=0)
+        )
+        self.links.add(link_fw)
+        link_fw.src = link_fw.src.get_rel_path(self.nodes[infra1].ports[port1])
+        link_fw.dst = link_fw.dst.get_rel_path(self.nodes[infra2].ports[port2])
+
+
+        link_bw = virtualizer.Link(id=id_bw,
+                                   name='aa_link',
+                                   resources=virtualizer.Link_resource(delay=0, bandwidth=0)
+        )
+        self.links.add(link_bw)
+        link_bw.src = link_bw.src.get_rel_path(self.nodes[infra2].ports[port2])
+        link_bw.dst = link_bw.dst.get_rel_path(self.nodes[infra1].ports[port1])
