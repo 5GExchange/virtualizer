@@ -29,6 +29,7 @@ from decimal import *
 from collections import OrderedDict, Iterable
 import StringIO
 import os
+import sys
 import string
 import logging
 
@@ -621,7 +622,7 @@ class Yang(object):
             Attr = ""
             Operation = ""
             Reset = ""
-        if enabled:
+        if enabled and sys.stdout.isatty():
             self._sh = DefaultSyntaxHighlight()
         else:
             self._sh = DisabledSyntaxHighlight()
