@@ -32,6 +32,7 @@ import os
 import sys
 import string
 import logging
+import json
 
 logger = logging.getLogger("baseclasses")
 
@@ -46,6 +47,82 @@ __EDIT_OPERATION_TYPE_ENUMERATION__ = (  # see https://tools.ietf.org/html/rfc62
 
 __IGNORED_ATTRIBUTES__ = ("_parent", "_tag", "_sorted_children", "_referred", "_key_attributes", "version")
 __EQ_IGNORED_ATTRIBUTES__ = ("_parent", "_sorted_children", "_referred", "_key_attributes", "version")
+
+
+class YangJson:
+    @classmethod
+    def elem_to_dict(cls, elem):
+        d = OrderedDict()
+        tag = elem.tag
+        for subelement in elem:
+            sub_tag = subelement.tag
+            sub_value = cls.elem_to_dict(subelement)
+            value = sub_value[sub_tag]
+
+            if sub_tag in d.keys():
+                if type(d[sub_tag]) is list:
+                    d[sub_tag].append(value)
+                else:
+                    d[sub_tag] = [d[sub_tag], value]
+            else:
+                d[sub_tag] = value
+        if d:
+            if elem.text:
+                d['text'] = elem.text
+            if elem.attrib:
+                d['attributes'] = elem.attrib
+            if elem.tail:
+                d['tail'] = elem.tail
+        else:
+            if elem.text:
+                d = elem.text or None
+        return {tag: d}
+
+    @classmethod
+    def dict_to_elem(cls, input_dict):
+        dict_tag = input_dict.keys()[0]
+        dict_value = input_dict[dict_tag]
+        sub_nodes = []
+        text = None
+        tail = None
+        attributes = None
+        if type(dict_value) is dict:
+            for key, value in dict_value.items():
+                if key == 'text':
+                    text = value
+                elif key == 'tail':
+                    tail = value
+                elif key == 'attributes':
+                    attributes = value
+                elif type(value) is list:
+                    list_sub_nodes = map(lambda sub_node: {key: sub_node}, value)
+                    list_sub_nodes = map(cls.dict_to_elem, list_sub_nodes)
+                    sub_nodes.extend(list_sub_nodes)
+                else:
+                    sub_node = cls.dict_to_elem({key: value})
+                    sub_nodes.append(sub_node)
+        else:
+            text = dict_value
+        node = ET.Element(dict_tag)
+        node.text = text
+        node.tail = tail
+        for sub_node in sub_nodes:
+            node.append(sub_node)
+        if attributes:
+            node.attrib = attributes
+        return node
+
+    @classmethod
+    def from_json(cls, _json):
+        _dict = json.loads(_json)
+        _elem = cls.dict_to_elem(_dict)
+        return _elem
+
+    @classmethod
+    def to_json(cls, _elem, ordered=True):
+        _dict = cls.elem_to_dict(_elem)
+        _json = json.dumps(_dict, indent=4, sort_keys=ordered)
+        return _json
 
 
 class Yang(object):
@@ -217,6 +294,11 @@ class Yang(object):
 
     def et(self):
         return self._et(None, False, True)
+
+    def json(self, ordered=True):
+        velem = self._et(None, False, ordered=True)
+        vjson = YangJson.to_json(velem, ordered=True)
+        return vjson
 
     def xml(self, ordered=True):
         """
@@ -567,6 +649,14 @@ class Yang(object):
         except ET.ParseError as e:
             raise Exception('XML Text ParseError: %s' % e.message)
             return None
+
+    @classmethod
+    def parse_from_json(cls, virt_json):
+        try:
+            elem = YangJson.from_json(virt_json)
+            return cls.parse(root=elem)
+        except ET.ParseError as e:
+            raise Exception('XML Text ParseError: %s' % e.message)
 
     def _et_attribs(self):
         attribs = {}
