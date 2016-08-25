@@ -136,6 +136,10 @@ class Yang(object):
             if type(av_list[0]) is list:
                 l = av_list.pop(0)
                 attr = l[0]
+            elif type(av_list[0]) is tuple:
+                l = av_list.pop(0)
+                if self.has_attrs_with_values(l, ignore_case):
+                    return self.has_attrs_with_values(av_list, ignore_case)
             elif (len(av_list) == 2) and (isinstance(av_list[1], basestring)): # attrib and value check
                 l = list(av_list)
                 av_list = ()
@@ -2088,6 +2092,10 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
             if type(av_list[0]) is list:
                 l = av_list.pop(0)
                 attr = l[0]
+            elif type(av_list[0]) is tuple:
+                l = av_list.pop(0)
+                if self.has_attrs_with_values(l, ignore_case):
+                    return self.has_attrs_with_values(av_list, ignore_case)
             elif (len(av_list) == 2) and (isinstance(av_list[1], basestring)): # attrib and value check
                 l = list(av_list)
                 av_list = ()
