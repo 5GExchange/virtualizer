@@ -289,14 +289,14 @@ class Yang(object):
         with open(outfilename, 'w') as outfile:
             outfile.writelines(text)
 
-    def _parse(self, parent, root):
-        """
-        Abstract method to create classes from XML string
-        :param parent: Yang
-        :param root: ElementTree
-        :return: -
-        """
-        pass
+    # def _parse(self, parent, root):
+    #     """
+    #     Abstract method to create classes from XML string
+    #     :param parent: Yang
+    #     :param root: ElementTree
+    #     :return: -
+    #     """
+    #     pass
 
     def update_parent(self):
         for k, v in self.__dict__.items():
@@ -951,7 +951,8 @@ class Yang(object):
                         if "operation" in object_.attrib.keys():
                             itemparsed.set_operation(object_.attrib["operation"], recursive=False, force=True)
                         self.__dict__[key].add(itemparsed)
-                        root.remove(object_)
+                        if len(object_._children) == 0:
+                            root.remove(object_)
                         object_ = root.find(key)
                 elif isinstance(item, Yang):
                     object_ = root.find(key)
@@ -959,6 +960,7 @@ class Yang(object):
                         item._parse(self, object_)
                         if "operation" in object_.attrib.keys():
                             self.set_operation(object_.attrib["operation"], recursive=False, force=True)
+                        root.remove(object_)
 
     def diff(self, target):
         diff = target.full_copy()
