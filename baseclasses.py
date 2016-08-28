@@ -922,7 +922,7 @@ class Yang(object):
                     self.__dict__[c].bind(relative=relative, reference=reference)
         return
 
-    def _parse(self, parent, root):
+    def _parse_(self, parent, root):
         """
         Abstract method to create classes from XML string
         :param parent: Yang
@@ -952,8 +952,18 @@ class Yang(object):
                         self.set_operation(object_.attrib["operation"], recursive=False, force=True)
                     root.remove(object_)
 
+    def _parse(self, parent, root):
+        """
+        Abstract method to create classes from XML string
+        :param parent: Yang
+        :param root: ElementTree
+        :return: -
+        """
+        self._parse_(parent, root)
+
+        # removing unknown tags
         for child in root:
-            logger.debug("Unknown yang tag: {root}/{child}".format(root=root.text,child=child.text))
+            logger.debug("Parsing: unknown yang tag: {root}/{child}".format(root=root.tag,child=child.tag))
             root.remove(child)
 
 
@@ -1596,6 +1606,15 @@ class ListedYang(Yang):
     def __init__(self, tag, keys, parent=None):
         super(ListedYang, self).__init__(tag, parent)
         self._key_attributes = keys
+
+    def _parse(self, parent, root):
+        """
+        Abstract method to create classes from XML string
+        :param parent: Yang
+        :param root: ElementTree
+        :return: -
+        """
+        self._parse_(parent, root)
 
     def is_initialized(self):
         """
