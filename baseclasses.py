@@ -289,15 +289,6 @@ class Yang(object):
         with open(outfilename, 'w') as outfile:
             outfile.writelines(text)
 
-    # def _parse(self, parent, root):
-    #     """
-    #     Abstract method to create classes from XML string
-    #     :param parent: Yang
-    #     :param root: ElementTree
-    #     :return: -
-    #     """
-    #     pass
-
     def update_parent(self):
         for k, v in self.__dict__.items():
             if k not in __IGNORED_ATTRIBUTES__:
@@ -938,66 +929,38 @@ class Yang(object):
         :param root: ElementTree
         :return: -
         """
-
-        for key, item in self.__dict__.items():
-            if key is not "_parent":
-                if isinstance(item, Leaf):
-                    item.parse(root)
-                elif isinstance(item, ListYang):
-                    object_ = root.find(key)
-                    itemClass = item.get_type()
-                    while object_ is not None:
-                        itemparsed = itemClass.parse(self, object_)
-                        if "operation" in object_.attrib.keys():
-                            itemparsed.set_operation(object_.attrib["operation"], recursive=False, force=True)
-                        self.__dict__[key].add(itemparsed)
-                        if len(object_._children) == 0:
-                            root.remove(object_)
-                        object_ = root.find(key)
-                elif isinstance(item, Yang):
-                    object_ = root.find(key)
-                    if object_ is not None:
-                        item._parse(self, object_)
-                        if "operation" in object_.attrib.keys():
-                            self.set_operation(object_.attrib["operation"], recursive=False, force=True)
+        for key in self._sorted_children:
+            item = self.__dict__[key]
+            if isinstance(item, Leaf):
+                item.parse(root)
+            elif isinstance(item, ListYang):
+                object_ = root.find(key)
+                itemClass = item.get_type()
+                while object_ is not None:
+                    itemparsed = itemClass.parse(self, object_)
+                    if "operation" in object_.attrib.keys():
+                        itemparsed.set_operation(object_.attrib["operation"], recursive=False, force=True)
+                    self.__dict__[key].add(itemparsed)
+                    if len(object_._children) == 0:
                         root.remove(object_)
+                    object_ = root.find(key)
+            elif isinstance(item, Yang):
+                object_ = root.find(key)
+                if object_ is not None:
+                    item._parse(self, object_)
+                    if "operation" in object_.attrib.keys():
+                        self.set_operation(object_.attrib["operation"], recursive=False, force=True)
+                    root.remove(object_)
+
+        for child in root:
+            logger.debug("Unknown yang tag: {root}/{child}".format(root=root.text,child=child.text))
+            root.remove(child)
+
 
     def diff(self, target):
         diff = target.full_copy()
         diff._diff(self)
         return diff
-
-    # def diff(self, target):
-    #     """
-    #     Method to return an independent changeset between target and the instance (neither the instance nor the target is modified).
-    #     :param target: Yang
-    #     :return: Yang
-    #     """
-    #
-    #     add = target.full_copy()
-    #     add.reduce(self)
-    #
-    #     remove = self.full_copy()
-    #     remove.reduce(target)
-    #     remove.replace_operation('create', 'delete', recursive=True)
-    #     n = remove.get_next(operation=("merge", "replace", "create"))
-    #     to_be_removed = []
-    #     while n is not None:
-    #         to_be_removed.append(n)
-    #         n = n.get_next(operation=("merge", "replace", "create"))
-    #     for n in to_be_removed:
-    #         try:
-    #             p = n.get_parent()
-    #             n.delete()
-    #             while p.is_initialized() is False:
-    #                 p = p.get_parent()
-    #                 p.delete()
-    #         except:
-    #             pass
-    #
-    #     remove.merge(add)
-    #     return remove
-
 
     def diff_failsafe(self, target):
         base_xml = self.xml()
