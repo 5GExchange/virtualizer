@@ -922,7 +922,7 @@ class Yang(object):
                     self.__dict__[c].bind(relative=relative, reference=reference)
         return
 
-    def _parse_(self, parent, root):
+    def _parse(self, parent, root):
         """
         Abstract method to create classes from XML string
         :param parent: Yang
@@ -941,8 +941,7 @@ class Yang(object):
                     if "operation" in object_.attrib.keys():
                         itemparsed.set_operation(object_.attrib["operation"], recursive=False, force=True)
                     self.__dict__[key].add(itemparsed)
-                    if len(object_._children) == 0:
-                        root.remove(object_)
+                    root.remove(object_)
                     object_ = root.find(key)
             elif isinstance(item, Yang):
                 object_ = root.find(key)
@@ -951,20 +950,6 @@ class Yang(object):
                     if "operation" in object_.attrib.keys():
                         self.set_operation(object_.attrib["operation"], recursive=False, force=True)
                     root.remove(object_)
-
-    def _parse(self, parent, root):
-        """
-        Abstract method to create classes from XML string
-        :param parent: Yang
-        :param root: ElementTree
-        :return: -
-        """
-        self._parse_(parent, root)
-
-        # removing unknown tags
-        for child in root:
-            logger.debug("Parsing: unknown yang tag: {root}/{child}".format(root=root.tag,child=child.tag))
-            root.remove(child)
 
 
     def diff(self, target):
@@ -1606,15 +1591,6 @@ class ListedYang(Yang):
     def __init__(self, tag, keys, parent=None):
         super(ListedYang, self).__init__(tag, parent)
         self._key_attributes = keys
-
-    def _parse(self, parent, root):
-        """
-        Abstract method to create classes from XML string
-        :param parent: Yang
-        :param root: ElementTree
-        :return: -
-        """
-        self._parse_(parent, root)
 
     def is_initialized(self):
         """
