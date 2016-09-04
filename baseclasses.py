@@ -32,6 +32,7 @@ import os
 import sys
 import string
 import logging
+import json
 
 logger = logging.getLogger("baseclasses")
 
@@ -46,6 +47,82 @@ __EDIT_OPERATION_TYPE_ENUMERATION__ = (  # see https://tools.ietf.org/html/rfc62
 
 __IGNORED_ATTRIBUTES__ = ("_parent", "_tag", "_sorted_children", "_referred", "_key_attributes", "version")
 __EQ_IGNORED_ATTRIBUTES__ = ("_parent", "_sorted_children", "_referred", "_key_attributes", "version")
+
+
+class YangJson:
+    @classmethod
+    def elem_to_dict(cls, elem):
+        d = OrderedDict()
+        tag = elem.tag
+        for subelement in elem:
+            sub_tag = subelement.tag
+            sub_value = cls.elem_to_dict(subelement)
+            value = sub_value[sub_tag]
+
+            if sub_tag in d.keys():
+                if type(d[sub_tag]) is list:
+                    d[sub_tag].append(value)
+                else:
+                    d[sub_tag] = [d[sub_tag], value]
+            else:
+                d[sub_tag] = value
+        if d:
+            if elem.text:
+                d['text'] = elem.text
+            if elem.attrib:
+                d['attributes'] = elem.attrib
+            if elem.tail:
+                d['tail'] = elem.tail
+        else:
+            if elem.text:
+                d = elem.text or None
+        return {tag: d}
+
+    @classmethod
+    def dict_to_elem(cls, input_dict):
+        dict_tag = input_dict.keys()[0]
+        dict_value = input_dict[dict_tag]
+        sub_nodes = []
+        text = None
+        tail = None
+        attributes = None
+        if type(dict_value) is dict:
+            for key, value in dict_value.items():
+                if key == 'text':
+                    text = value
+                elif key == 'tail':
+                    tail = value
+                elif key == 'attributes':
+                    attributes = value
+                elif type(value) is list:
+                    list_sub_nodes = map(lambda sub_node: {key: sub_node}, value)
+                    list_sub_nodes = map(cls.dict_to_elem, list_sub_nodes)
+                    sub_nodes.extend(list_sub_nodes)
+                else:
+                    sub_node = cls.dict_to_elem({key: value})
+                    sub_nodes.append(sub_node)
+        else:
+            text = dict_value
+        node = ET.Element(dict_tag)
+        node.text = text
+        node.tail = tail
+        for sub_node in sub_nodes:
+            node.append(sub_node)
+        if attributes:
+            node.attrib = attributes
+        return node
+
+    @classmethod
+    def from_json(cls, _json):
+        _dict = json.loads(_json)
+        _elem = cls.dict_to_elem(_dict)
+        return _elem
+
+    @classmethod
+    def to_json(cls, _elem, ordered=True):
+        _dict = cls.elem_to_dict(_elem)
+        _json = json.dumps(_dict, indent=4, sort_keys=ordered)
+        return _json
 
 
 class Yang(object):
@@ -218,6 +295,11 @@ class Yang(object):
     def et(self):
         return self._et(None, False, True)
 
+    def json(self, ordered=True):
+        velem = self._et(None, False, ordered=True)
+        vjson = YangJson.to_json(velem, ordered=True)
+        return vjson
+
     def xml(self, ordered=True):
         """
         Dump the class subtree as XML string
@@ -288,15 +370,6 @@ class Yang(object):
             text = self.xml(ordered=ordered)
         with open(outfilename, 'w') as outfile:
             outfile.writelines(text)
-
-    def _parse(self, parent, root):
-        """
-        Abstract method to create classes from XML string
-        :param parent: Yang
-        :param root: ElementTree
-        :return: -
-        """
-        pass
 
     def update_parent(self):
         for k, v in self.__dict__.items():
@@ -576,6 +649,14 @@ class Yang(object):
         except ET.ParseError as e:
             raise Exception('XML Text ParseError: %s' % e.message)
             return None
+
+    @classmethod
+    def parse_from_json(cls, virt_json):
+        try:
+            elem = YangJson.from_json(virt_json)
+            return cls.parse(root=elem)
+        except ET.ParseError as e:
+            raise Exception('XML Text ParseError: %s' % e.message)
 
     def _et_attribs(self):
         attribs = {}
@@ -938,64 +1019,33 @@ class Yang(object):
         :param root: ElementTree
         :return: -
         """
+        for key in self._sorted_children:
+            item = self.__dict__[key]
+            if isinstance(item, Leaf):
+                item.parse(root)
+            elif isinstance(item, ListYang):
+                object_ = root.find(key)
+                itemClass = item.get_type()
+                while object_ is not None:
+                    itemparsed = itemClass.parse(self, object_)
+                    if "operation" in object_.attrib.keys():
+                        itemparsed.set_operation(object_.attrib["operation"], recursive=False, force=True)
+                    self.__dict__[key].add(itemparsed)
+                    root.remove(object_)
+                    object_ = root.find(key)
+            elif isinstance(item, Yang):
+                object_ = root.find(key)
+                if object_ is not None:
+                    item._parse(self, object_)
+                    if "operation" in object_.attrib.keys():
+                        self.set_operation(object_.attrib["operation"], recursive=False, force=True)
+                    root.remove(object_)
 
-        for key, item in self.__dict__.items():
-            if key is not "_parent":
-                if isinstance(item, Leaf):
-                    item.parse(root)
-                elif isinstance(item, ListYang):
-                    object_ = root.find(key)
-                    itemClass = item.get_type()
-                    while object_ is not None:
-                        itemparsed = itemClass.parse(self, object_)
-                        if "operation" in object_.attrib.keys():
-                            itemparsed.set_operation(object_.attrib["operation"], recursive=False, force=True)
-                        self.__dict__[key].add(itemparsed)
-                        root.remove(object_)
-                        object_ = root.find(key)
-                elif isinstance(item, Yang):
-                    object_ = root.find(key)
-                    if object_ is not None:
-                        item._parse(self, object_)
-                        if "operation" in object_.attrib.keys():
-                            self.set_operation(object_.attrib["operation"], recursive=False, force=True)
 
     def diff(self, target):
         diff = target.full_copy()
         diff._diff(self)
         return diff
-
-    # def diff(self, target):
-    #     """
-    #     Method to return an independent changeset between target and the instance (neither the instance nor the target is modified).
-    #     :param target: Yang
-    #     :return: Yang
-    #     """
-    #
-    #     add = target.full_copy()
-    #     add.reduce(self)
-    #
-    #     remove = self.full_copy()
-    #     remove.reduce(target)
-    #     remove.replace_operation('create', 'delete', recursive=True)
-    #     n = remove.get_next(operation=("merge", "replace", "create"))
-    #     to_be_removed = []
-    #     while n is not None:
-    #         to_be_removed.append(n)
-    #         n = n.get_next(operation=("merge", "replace", "create"))
-    #     for n in to_be_removed:
-    #         try:
-    #             p = n.get_parent()
-    #             n.delete()
-    #             while p.is_initialized() is False:
-    #                 p = p.get_parent()
-    #                 p.delete()
-    #         except:
-    #             pass
-    #
-    #     remove.merge(add)
-    #     return remove
-
 
     def diff_failsafe(self, target):
         base_xml = self.xml()

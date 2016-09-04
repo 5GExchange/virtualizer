@@ -4,3 +4,5 @@ latex/
 /Doxyfile.bak
 *.egg-info
 *~
+build/
+dist/
