@@ -1690,10 +1690,16 @@ class ListedYang(Yang):
         """
         if self._operation is not None:
             return True;
-        for k, v in self.__dict__.items():
-            if isinstance(v, Yang) and (k is not "_parent") and (k not in self._key_attributes):
-                if v.is_initialized():
+        for c in self._sorted_children:
+            try:
+                if (self.__dict__[c] is not None) and self.__dict__[c].is_initialized():
                     return True
+            except:  # children was null?
+                pass
+        # for k, v in self.__dict__.items():
+        #     if isinstance(v, Yang) and (k is not "_parent") and (k not in self._key_attributes):
+        #         if v.is_initialized():
+        #             return True
         return False
 
     def get_parent(self, level=1, tag=None):
