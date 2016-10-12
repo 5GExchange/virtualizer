@@ -1682,7 +1682,7 @@ class ListedYang(Yang):
         super(ListedYang, self).__init__(tag, parent)
         self._key_attributes = keys
 
-    def is_initialized(self):
+    def is_initialized(self, ignore_key=False):
         """
         Check if any of the attributes of instance are initialized, returns True if yes
         :param: -
@@ -1690,9 +1690,13 @@ class ListedYang(Yang):
         """
         if self._operation is not None:
             return True;
+        ignores = list()
+        if ignore_key:
+            ignores = self._key_attributes
         for c in self._sorted_children:
             try:
-                if (self.__dict__[c] is not None) and self.__dict__[c].is_initialized():
+
+                if (self.__dict__[c] is not None) and (c not in ignores) and self.__dict__[c].is_initialized():
                     return True
             except:  # children was null?
                 pass
@@ -2067,7 +2071,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
             _done.append(key)
             if key in source.keys():
                 self[key]._diff(source[key])
-                if self[key].is_initialized() is False:
+                if self[key].is_initialized(ignore_key=True) is False:
                     self[key].delete()
             else:
                 self[key].set_operation("create", recursive=False, force=False)
