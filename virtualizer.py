@@ -1,4 +1,4 @@
-#    Filename: virtualizer.py		 Created: 2016-07-08  19:29:40
+#    Filename: virtualizer.py		 Created: 2016-10-12  13:43:31
 #    This file was automatically created by a pyang plugin (PNC) developed at Ericsson Hungary Ltd., 2015
 #    Authors: Robert Szabo, Balazs Miriszlai, Akos Recse, Raphael Vicente Rosa
 #    Credits: Robert Szabo, Raphael Vicente Rosa, David Jocha, Janos Elek, Balazs Miriszlai, Akos Recse
@@ -253,11 +253,14 @@ class GroupingSoftware_resource(Yang):
 # YANG construct: grouping node
 class GroupingNode(GroupingId_name_type, GroupingLinks, GroupingMetadata):
     """Any node: infrastructure or NFs"""
-    def __init__(self, tag, parent=None, id=None, name=None, type=None, ports=None, links=None, resources=None):
+    def __init__(self, tag, parent=None, id=None, name=None, type=None, status=None, ports=None, links=None, resources=None):
         GroupingId_name_type.__init__(self, tag, parent, id, name, type)
         GroupingLinks.__init__(self, tag, parent, links)
         GroupingMetadata.__init__(self, tag, parent)
-        self._sorted_children = ["id", "name", "type", "ports", "links", "resources", "metadata"]
+        self._sorted_children = ["id", "name", "type", "status", "ports", "links", "resources", "metadata"]
+        # yang construct: leaf
+        self.status = StringLeaf("status", parent=self, value=status)
+        """:type: StringLeaf"""
         # yang construct: container
         self.ports = None
         """:type: NodePorts"""
@@ -298,10 +301,10 @@ class GroupingNodes(Yang):
 
 # YANG construct: grouping infra-node
 class GroupingInfra_node(GroupingNode, GroupingFlowtable):
-    def __init__(self, tag, parent=None, id=None, name=None, type=None, ports=None, links=None, resources=None, NF_instances=None, capabilities=None, flowtable=None):
-        GroupingNode.__init__(self, tag, parent, id, name, type, ports, links, resources)
+    def __init__(self, tag, parent=None, id=None, name=None, type=None, status=None, ports=None, links=None, resources=None, NF_instances=None, capabilities=None, flowtable=None):
+        GroupingNode.__init__(self, tag, parent, id, name, type, status, ports, links, resources)
         GroupingFlowtable.__init__(self, tag, parent, flowtable)
-        self._sorted_children = ["id", "name", "type", "ports", "links", "resources", "metadata", "NF_instances", "capabilities", "flowtable"]
+        self._sorted_children = ["id", "name", "type", "status", "ports", "links", "resources", "metadata", "NF_instances", "capabilities", "flowtable"]
         # yang construct: container
         self.NF_instances = None
         """:type: Nodes"""
@@ -321,7 +324,7 @@ class GroupingInfra_node(GroupingNode, GroupingFlowtable):
 # YANG construct: grouping virtualizer
 class GroupingVirtualizer(GroupingId_name, GroupingLinks, GroupingMetadata):
     """Grouping for a single virtualizer"""
-    def __init__(self, tag, parent=None, id=None, name=None, nodes=None, links=None, version='2016-07-08; compiled at 2016-07-08  19:29:40'):
+    def __init__(self, tag, parent=None, id=None, name=None, nodes=None, links=None, version='2016-07-08; compiled at 2016-10-12  13:43:31'):
         GroupingId_name.__init__(self, tag, parent, id, name)
         GroupingLinks.__init__(self, tag, parent, links)
         GroupingMetadata.__init__(self, tag, parent)
@@ -385,18 +388,18 @@ class Port(ListedYang, GroupingPort):
 
 # YANG construct: list node
 class Node(ListedYang, GroupingNode):
-    def __init__(self, tag="node", parent=None, id=None, name=None, type=None, ports=None, links=None, resources=None):
+    def __init__(self, tag="node", parent=None, id=None, name=None, type=None, status=None, ports=None, links=None, resources=None):
         ListedYang.__init__(self, "node", ["id"])
-        GroupingNode.__init__(self, tag, parent, id, name, type, ports, links, resources)
-        self._sorted_children = ["id", "name", "type", "ports", "links", "resources", "metadata"]
+        GroupingNode.__init__(self, tag, parent, id, name, type, status, ports, links, resources)
+        self._sorted_children = ["id", "name", "type", "status", "ports", "links", "resources", "metadata"]
 
 
 # YANG construct: list node
 class Infra_node(ListedYang, GroupingInfra_node):
-    def __init__(self, tag="node", parent=None, id=None, name=None, type=None, ports=None, links=None, resources=None, NF_instances=None, capabilities=None, flowtable=None):
+    def __init__(self, tag="node", parent=None, id=None, name=None, type=None, status=None, ports=None, links=None, resources=None, NF_instances=None, capabilities=None, flowtable=None):
         ListedYang.__init__(self, "node", ["id"])
-        GroupingInfra_node.__init__(self, tag, parent, id, name, type, ports, links, resources, NF_instances, capabilities, flowtable)
-        self._sorted_children = ["id", "name", "type", "ports", "links", "resources", "metadata", "NF_instances", "capabilities", "flowtable"]
+        GroupingInfra_node.__init__(self, tag, parent, id, name, type, status, ports, links, resources, NF_instances, capabilities, flowtable)
+        self._sorted_children = ["id", "name", "type", "status", "ports", "links", "resources", "metadata", "NF_instances", "capabilities", "flowtable"]
 
 
 # YANG construct: container sap_data
@@ -591,7 +594,7 @@ class VirtualizerNodes(Yang):
 
 # YANG construct: container virtualizer
 class Virtualizer(GroupingVirtualizer):
-    def __init__(self, tag="virtualizer", parent=None, id=None, name=None, nodes=None, links=None, version='2016-07-08; compiled at 2016-07-08  19:29:40'):
+    def __init__(self, tag="virtualizer", parent=None, id=None, name=None, nodes=None, links=None, version='2016-07-08; compiled at 2016-10-12  13:43:31'):
         GroupingVirtualizer.__init__(self, tag, parent, id, name, nodes, links, version)
         self._sorted_children = ["id", "name", "nodes", "links", "metadata", "version"]
 

@@ -241,6 +241,10 @@ module virtualizer {
   grouping node {
     description "Any node: infrastructure or NFs";
     uses id-name-type;
+    leaf status {
+      description "NF_instances states: {running|paused|stopped}; supported_NF states: {unspecified|created}";
+      type string;
+    }
     container ports {
       list port{
         key "id";
