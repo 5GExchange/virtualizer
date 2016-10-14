@@ -33,7 +33,7 @@ import virtualizer as v
 
 
 # YANG construct: list virtualizer
-class virtualizer(ListedYang):
+class virtualizer(ListedYang, v.Virtualizer):
     def __init__(self, tag="virtualizer", parent=None):
         ListedYang.__init__(self, "virtualizer", ["id"])
         self._sorted_children = ["id", "name", "nodes", "links", "metadata", "version"]
