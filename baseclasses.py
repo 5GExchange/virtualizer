@@ -226,29 +226,30 @@ class Yang(object):
                 attr = l
             _return = True
             if hasattr(self, attr):
-                if type (l) in (list, tuple):
-                    if type(l[1]) in (list, tuple):
-                        _return = self.__dict__[attr].has_attrs_with_values(l[1], ignore_case)  # recursive structure call
-                        if _return and len(av_list) > 0:
-                            return _return and self.has_attrs_with_values(av_list, ignore_case)
-                        else:
-                            return _return
-                    else:
-                        if ignore_case and (self.__dict__[attr].get_as_text().lower() == l[1].lower()):
-                            if len(av_list) > 0:
-                                return self.has_attrs_with_values(av_list, ignore_case)
+                if self.__dict__[attr].is_initialized():
+                    if type (l) in (list, tuple):
+                        if type(l[1]) in (list, tuple):
+                            _return = self.__dict__[attr].has_attrs_with_values(l[1], ignore_case)  # recursive structure call
+                            if _return and len(av_list) > 0:
+                                return _return and self.has_attrs_with_values(av_list, ignore_case)
                             else:
                                 return _return
-                        if self.__dict__[attr].get_as_text() == l[1]:
-                            if len(av_list) > 0:
-                                return self.has_attrs_with_values(av_list, ignore_case)
-                            else:
-                                return True
-                else:
-                    if (type(av_list) in (list, tuple)) and (len(av_list)>0):
-                        return self.__dict__[attr].has_attrs_with_values(av_list, ignore_case)
+                        else:
+                            if ignore_case and (self.__dict__[attr].get_as_text().lower() == l[1].lower()):
+                                if len(av_list) > 0:
+                                    return self.has_attrs_with_values(av_list, ignore_case)
+                                else:
+                                    return _return
+                            if self.__dict__[attr].get_as_text() == l[1]:
+                                if len(av_list) > 0:
+                                    return self.has_attrs_with_values(av_list, ignore_case)
+                                else:
+                                    return True
                     else:
-                        return True
+                        if (type(av_list) in (list, tuple)) and (len(av_list)>0):
+                            return self.__dict__[attr].has_attrs_with_values(av_list, ignore_case)
+                        else:
+                            return True
             return False
         except:
             return False
