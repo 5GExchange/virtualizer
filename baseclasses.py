@@ -1597,6 +1597,42 @@ class Leafref(StringLeaf):
             return self.walk_path(self.data, reference=reference)
         return self.target
 
+    def get_absolute_path_to_target(self, strip=0):
+        """
+        Returns the absolute path of the target
+        :param: -
+        :return: string
+        """
+        def _walk(path, steps):
+            if len(steps) > 0:
+                n = steps.pop(0)
+                if n == "..":
+                    path.pop(-1)
+                    return _walk(path, steps)
+                else:
+                    path.append(n)
+                    return _walk(path, steps)
+            else:
+                return path
+
+
+        if self.target is not None:
+            self.target.get_path()
+        if self.data is not None:
+            if self.data[0] == "/":  # absolute path
+                return self.data
+            path = self.get_path().split("/")
+            steps = self.data.split("/")
+            _path = _walk(path, steps)
+            while strip > 0:
+                _path.pop(-1)
+                strip-=1
+            return "/".join(_path)
+
+
+
+
+
     def bind(self, relative=True, reference=None):
         """
         Binds the target and add the referee to the referende list in the target. The path is updated to relative or absolut based on the parameter
