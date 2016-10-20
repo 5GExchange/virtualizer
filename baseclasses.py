@@ -1615,7 +1615,6 @@ class Leafref(StringLeaf):
             else:
                 return path
 
-
         if self.target is not None:
             self.target.get_path()
         if self.data is not None:
@@ -1628,6 +1627,28 @@ class Leafref(StringLeaf):
                 _path.pop(-1)
                 strip-=1
             return "/".join(_path)
+
+    def get_target_from(self, src):
+        path = self.get_absolute_path_to_target()
+        t = None
+        if type(src) is tuple:
+            for s in src:
+                try:
+                    return s.walk_path(path)
+                except: # object not found
+                    pass
+            text = ""
+            for s in src:
+                text += s.html() + "\n========================================"
+            raise ValueError("{target} from {obj} is not available in {virt}".format(target=self.data,obj=self.get_path(),virt=text))
+        else:
+            try:
+                return src.walk_path(path)
+            except: # object not found
+                pass
+            raise ValueError("{target} from {obj} is not available in {virt}".format(target=self.data,obj=self.get_path(),virt=src.html()))
+
+
 
 
 
