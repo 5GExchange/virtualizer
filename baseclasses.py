@@ -267,7 +267,7 @@ class Yang(object):
                 return self._parent.get_parent(level=level-1, tag=tag) if level > 1 else self  # return self if no more level but matcing tag; otherwise continue
             return self._parent.get_parent(level=level, tag=tag)
         if level > 1:
-            return self._parent.get_parent(level=level-1)
+            return self._parent.get_parent(level=level-1) if self._parent is not None else None
         return self._parent
 
     def set_parent(self, parent):
@@ -520,6 +520,10 @@ class Yang(object):
             elif self.get_tag() == p[0]:
                 p.pop(0)
                 return self.create_path(source, path="/".join(p), target_copy_type=target_copy_type)
+            _p = self.get_path().split("/")
+            if p[0] == _p[1]:
+                p.pop(0)
+                return self.create_path(source, path="/".join(p), target_copy_type=target_copy_type)
             raise ValueError("Root tag not found in walk_path()")
         if l == "..":
             return self.get_parent().create_path(source, path="/".join(p), target_copy_type=target_copy_type)
@@ -544,6 +548,7 @@ class Yang(object):
                 self.__dict__[l] = _yang.copy(_copy_type)
                 self.__dict__[l].set_parent(self)
             return getattr(self, l).create_path(source, path="/".join(p), target_copy_type=target_copy_type)
+        raise ValueError("Root tag not found in walk_path()")
 
     def walk_path(self, path, reference=None):
         """
@@ -559,18 +564,22 @@ class Yang(object):
         if path[0] == "/":  # absolute path
             if self.get_parent() is not None:
                 return self.get_parent().walk_path(path, reference)
-            elif self.get_tag() == p[0]:
+            if self.get_tag() == p[0]:
+                p.pop(0)
+                return self.walk_path("/".join(p), reference)
+            _p = self.get_path().split("/")
+            if p[0] == _p[1]:
                 p.pop(0)
                 return self.walk_path("/".join(p), reference)
             # entry not in the current tree, let's try the reference tree
-            elif reference is not None:
+            if reference is not None:
                 try:
                     yng = reference.walk_path(self.get_path(), reference=None)
                     return yng.walk_path("/".join(p), reference=None)
                 except:
                     # path does not exist in the reference tree raise exception
                     raise ValueError("in walk_path(): Root tag not found neither in the current nor in the reference tree")
-            raise ValueError("Root tag not found in walk_path()")
+            # raise ValueError("Root tag not found in walk_path()")
         if l == "..":
             return self.get_parent().walk_path("/".join(p), reference)
         else:
@@ -1640,13 +1649,13 @@ class Leafref(StringLeaf):
             text = ""
             for s in src:
                 text += s.html() + "\n========================================"
-            raise ValueError("{target} from {obj} is not available in {virt}".format(target=self.data,obj=self.get_path(),virt=text))
+            raise ValueError("{target} from {obj} is not available in \n{virt}".format(target=self.data,obj=self.get_path(),virt=text))
         else:
             try:
                 return src.walk_path(path)
             except: # object not found
                 pass
-            raise ValueError("{target} from {obj} is not available in {virt}".format(target=self.data,obj=self.get_path(),virt=src.html()))
+            raise ValueError("{target} from {obj} is not available in \n{virt}".format(target=self.data,obj=self.get_path(),virt=src.html()))
 
 
 
@@ -1812,7 +1821,7 @@ class ListedYang(Yang):
         if self.get_parent() is not None:
             return self.get_parent().get_path() + "/" + self.get_tag() + "[" + s + "]"
         else:
-            return self.get_tag() + "[" + s + "]"
+            return "/" + self.get_tag() + "[" + s + "]"
 
     def empty_copy(self):
         """
