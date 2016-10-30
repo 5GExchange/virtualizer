@@ -1,4 +1,4 @@
-#    Filename: virtualizers.py		 Created: 2016-07-08  18:58:21
+#    Filename: virtualizers.py		 Created: 2016-10-30  21:16:23
 #    This file was automatically created by a pyang plugin (PNC) developed at Ericsson Hungary Ltd., 2015
 #    Authors: Robert Szabo, Balazs Miriszlai, Akos Recse, Raphael Vicente Rosa
 #    Credits: Robert Szabo, Raphael Vicente Rosa, David Jocha, Janos Elek, Balazs Miriszlai, Akos Recse
@@ -9,11 +9,11 @@
 #    Prefix: virtualizers
 #    Organization: ETH
 #    Contact: Robert Szabo <robert.szabo@ericsson.com>
-#    Description: First release
+#    Description: Bind list added
 
 __copyright__ = "Copyright 2015, Ericsson Hungary Ltd."
 __license__ = "Apache License, Version 2.0"
-__version__ = "2016-07-08"
+__version__ = "2016-10-30"
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,6 +32,45 @@ from baseclasses import *
 import virtualizer as v
 
 
+
+# YANG construct: grouping bind
+class GroupingBind(Yang):
+    def __init__(self, tag, parent=None):
+        super(GroupingBind, self).__init__(tag, parent)
+        self._sorted_children = ["bind"]
+        # yang construct: list
+        self.bind = ListYang("bind", parent=self, type=BindBind)
+        """:type: ListYang(BindBind)"""
+
+    def add(self, item):
+        return self.bind.add(item)
+
+    def remove(self, item):
+        return self.bind.remove(item)
+
+    def __getitem__(self, key):
+        return self.bind[key]
+
+    def __iter__(self):
+        return self.bind.itervalues()
+
+
+# YANG construct: list bind
+class BindBind(ListedYang):
+    def __init__(self, tag="bind", parent=None, id=None, src=None, dst=None):
+        ListedYang.__init__(self, "bind", ["id"])
+        self._sorted_children = ["id", "src", "dst"]
+        # yang construct: leaf
+        self.id = StringLeaf("id", parent=self, value=id, mandatory=True)
+        """:type: StringLeaf"""
+        # yang construct: leaf
+        self.src = Leafref("src", parent=self, value=src)
+        """:type: Leafref"""
+        # yang construct: leaf
+        self.dst = Leafref("dst", parent=self, value=dst)
+        """:type: Leafref"""
+
+
 # YANG construct: list virtualizer
 class virtualizer(ListedYang, v.Virtualizer):
     def __init__(self, tag="virtualizer", parent=None):
@@ -41,11 +80,11 @@ class virtualizer(ListedYang, v.Virtualizer):
 
 
 # YANG construct: container virtualizers
-class Virtualizers(Yang):
+class Virtualizers(GroupingBind):
     """Container for a list of virtualizers"""
     def __init__(self, tag="virtualizers", parent=None):
-        super(Virtualizers, self).__init__(tag, parent)
-        self._sorted_children = ["virtualizer"]
+        GroupingBind.__init__(self, tag, parent)
+        self._sorted_children = ["virtualizer", "bind"]
         # yang construct: list
         self.virtualizer = ListYang("virtualizer", parent=self, type=virtualizer)
         """:type: ListYang(V:virtualizer)"""
