@@ -227,7 +227,7 @@ class Yang(object):
             _return = True
             if hasattr(self, attr):
                 if self.__dict__[attr].is_initialized():
-                    if type (l) in (list, tuple):
+                    if type(l) in (list, tuple):
                         if type(l[1]) in (list, tuple):
                             _return = self.__dict__[attr].has_attrs_with_values(l[1], ignore_case)  # recursive structure call
                             if _return and len(av_list) > 0:
@@ -1247,7 +1247,12 @@ class Leaf(Yang):
         for k, v in self.__dict__.items():
             if k not in __EQ_IGNORED_ATTRIBUTES__:
                 eq = eq and (hasattr(other, k)) and (v == other.__dict__[k])
+                if not eq:
+                    return eq
         return eq
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
 class StringLeaf(Leaf):
     """
@@ -1314,6 +1319,26 @@ class StringLeaf(Leaf):
                 self.data = str(value)
         else:
             self.data = value
+
+    def __eq__(self, other):
+        """
+        Check if other leaf has the same attributes and values, returns True if yes
+        :param other: instance
+        :return: boolean
+        """
+        if type(other) is str:
+            return self.data == other
+        return super(StringLeaf, self).__eq__(other)
+
+    def __ne__(self, other):
+        """
+        Check if other leaf has the same attributes and values, returns True if yes
+        :param other: instance
+        :return: boolean
+        """
+        if type(other) is str:
+            return self.data != other
+        return super(StringLeaf, self).__ne__(other)
 
 
 class IntLeaf(Leaf):
