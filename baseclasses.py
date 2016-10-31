@@ -539,7 +539,7 @@ class Yang(object):
                 key = key[0]
 
             if not (key in self.__dict__[attrib].keys()):
-                _yang = source.walk_path(self.get_path())[key]
+                _yang = source.walk_path(self.get_path()).__dict__[attrib][key]
                 self.__dict__[attrib].add(_yang.copy(_copy_type))
             return getattr(self, attrib)[key].create_path(source, path="/".join(p), target_copy_type=target_copy_type)
         else:
@@ -986,7 +986,8 @@ class Yang(object):
         """
         if self.get_parent() is not None:
             if isinstance(self, ListedYang):
-                self.get_parent().remove(self)
+                self._parent.remove(self) #FIXME: verify if this works correctly for all use-cases
+                # self.get_parent().remove(self)  # this does not work without a container around a list
             else:
                 self.get_parent().__dict__[
                     self.get_tag()] = None  # FIXME: tag is not necessarily Python naming conform!
