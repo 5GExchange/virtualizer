@@ -596,7 +596,7 @@ class Yang(object):
                         return getattr(self, attrib)[key[0]].walk_path("/".join(p), reference)
                     elif reference is not None:
                         yng = reference.walk_path(self.get_path(), reference=None)
-                        return yng.walk_path("/".join(p), reference=None)
+                        return yng.walk_path(l + "/" + "/".join(p), reference=None)
                 elif key in self.__dict__[attrib].keys():
                    return getattr(self, attrib)[key].walk_path("/".join(p), reference)
             else:
@@ -605,7 +605,7 @@ class Yang(object):
                 elif reference is not None:
                     path = self.get_path()
                     yng = reference.walk_path(path, reference=None)
-                    return yng.walk_path(l+"/"+"/".join(p), reference=None)
+                    return yng.walk_path(l + "/" + "/".join(p), reference=None)
         raise ValueError("Path does not exist from {f} to {t}; yang tree={y}".format(f=self.get_path(), t=l+"/"+"/".join(p), y=self.html()))
 
     def get_rel_path(self, target):
