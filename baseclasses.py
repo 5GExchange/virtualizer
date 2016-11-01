@@ -399,13 +399,16 @@ class Yang(object):
             else:
                 _ignores.append(ignores)
         for k in self._sorted_children:
-            v = getattr(self, k)
-            vv = getattr(reference, k)
-            if type(v) == type(vv):
-                if v.reduce(vv):
-                    v.clear_data()
-                else:
+            if k not in _ignores:
+                v = getattr(self, k)
+                vv = getattr(reference, k)
+                if type(v) == type(vv):
+                    if v.reduce(vv):
+                        v.clear_data()
+                    else:
                         _reduce = False
+                else:
+                    _reduce = False
         _reduce &= self.has_operation(reference.get_operation())
         return _reduce
 
@@ -494,8 +497,8 @@ class Yang(object):
         :param: -
         :return: string
         """
-        if self.get_parent() is not None:
-            return self.get_parent().get_path() + "/" + self.get_tag()
+        if self._parent is not None:
+            return self._parent.get_path() + "/" + self.get_tag()
         else:
             return "/" + self.get_tag()
 
@@ -1851,8 +1854,9 @@ class ListedYang(Yang):
             s = ', '.join('%s=%s' % t for t in zip(key_tags, key_values))
         else:
             s = key_tags + "=" + key_values
-        if self.get_parent() is not None:
-            return self.get_parent().get_path() + "/" + self.get_tag() + "[" + s + "]"
+
+        if self._parent is not None:
+            return self._parent.get_path() + "/" + self.get_tag() + "[" + s + "]"
         else:
             return "/" + self.get_tag() + "[" + s + "]"
 
@@ -1867,17 +1871,15 @@ class ListedYang(Yang):
             setattr(inst, key, getattr(self, key).full_copy())
         return inst
 
-    # def reduce(self, reference):
-    #     """
-    #     Delete instances which equivalently exist in the reference tree otherwise updates operation attribute
-    #     The call is recursive, a node is removed if and only if all of its children are removed.
-    #     :param reference: Yang
-    #     :return:
-    #     """
-    #
-    #     keys = self.get_key_tags()
-    #     reduce_ = super(ListedYang, self).reduce(reference, keys)
-    #     return reduce_
+    def reduce(self, reference):
+        """
+        Delete instances which equivalently exist in the reference tree otherwise updates operation attribute
+        The call is recursive, a node is removed if and only if all of its children are removed.
+        :param reference: Yang
+        :return:
+        """
+        keys = self.get_key_tags()
+        return super(ListedYang, self).reduce(reference, keys)
 
 
     def _diff(self, source):
@@ -2074,6 +2076,15 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         if isinstance(item, ListedYang):
             item = item.keys()
         return self._data.pop(item)
+
+    def get_path(self):
+        """
+        Overides Yang method
+        :param: -
+        :return: upstream path
+        """
+        if self._parent is not None:
+            return self._parent.get_path()
 
     def _et(self, node, inherited=False, ordered=True):
         """
