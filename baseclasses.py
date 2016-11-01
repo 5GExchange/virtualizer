@@ -206,6 +206,8 @@ class Yang(object):
 
     def has_attrs_with_values(self, av_list, ignore_case=True):
         try:
+            if len(av_list) == 0:  # for list entries
+                return self
             if len(av_list) == 1 and type(av_list[0]) in (list, tuple):
                 return self.has_attrs_with_values(av_list[0], ignore_case)
             if type(av_list) is tuple:
@@ -1868,7 +1870,8 @@ class ListedYang(Yang):
         :return:
         """
         keys = self.get_key_tags()
-        return super(ListedYang, self).reduce(reference, keys)
+        reduce_ = super(ListedYang, self).reduce(reference, keys)
+        return reduce_
 
 
     def _diff(self, source):
