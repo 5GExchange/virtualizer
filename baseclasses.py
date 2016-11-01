@@ -1,3 +1,4 @@
+
 #    Yang baseclasses for the pyang plugin (PNC) developed at Ericsson Hungary Ltd.
 #    Authors: Robert Szabo, Balazs Miriszlai, Akos Recse, Raphael Vicente Rosa
 #    Credits: Robert Szabo, Raphael Vicente Rosa, David Jocha, Janos Elek, Balazs Miriszlai, Akos Recse
@@ -48,6 +49,7 @@ __EDIT_OPERATION_TYPE_ENUMERATION__ = (  # see https://tools.ietf.org/html/rfc62
 __IGNORED_ATTRIBUTES__ = ("_parent", "_tag", "_sorted_children", "_referred", "_key_attributes", "version")
 __EQ_IGNORED_ATTRIBUTES__ = ("_parent", "_sorted_children", "_referred", "_key_attributes", "version")
 
+__REDUCE_ATTRIBUTES__ = ("")
 
 class YangJson:
     @classmethod
@@ -396,6 +398,17 @@ class Yang(object):
                 _ignores.extend(ignores)
             else:
                 _ignores.append(ignores)
+        for k in self._sorted_children:
+            v = getattr(self, k)
+            vv = getattr(reference, k)
+            if type(v) == type(vv):
+                if v.reduce(vv):
+                    v.clear_data()
+                else:
+                        _reduce = False
+        _reduce &= self.has_operation(reference.get_operation())
+        return _reduce
+
         for k, v in self.__dict__.items():
             # if hasattr(v, "mandatory") and v.get_mandatory() is True:
             #     _ignores.append(k)
@@ -768,36 +781,29 @@ class Yang(object):
         :param operation: string or tuple of strings
         :return: boolean
         """
-        # if (self._operation is None) or (operation is None):
-        #     return False
-
         if isinstance(operation, (tuple, list, set)):
             for op in operation:
                 if (op is not None) and (op not in __EDIT_OPERATION_TYPE_ENUMERATION__):
                     raise ValueError("has_operation(): Illegal operation value={op} out of {operation}".format(op=op,
                                                                                                                operation=operation))
-            if self._operation in operation:
-                return True
-            return False
+            return self._operation in operation
         if (operation is not None) and (operation not in __EDIT_OPERATION_TYPE_ENUMERATION__):
             raise ValueError("has_operation(): Illegal operation value={operation}".format(operation=operation))
-        if self._operation == operation:
-            return True
-        return False
+        return self._operation == operation
 
-    def contains_operation(self, operation="delete"):  # FIXME: rename has_operation()
-        """
-        Verifies if the instance contains operation set for any of its attributes
-        :param operation: string
-        :return: boolean
-        """
-        if self.get_operation() == operation:
-            return True
-        for k, v in self.__dict__.items():
-            if isinstance(v, Yang) and k is not "_parent":
-                if v.contains_operation(operation):
-                    return True
-        return False
+    # def contains_operation(self, operation="delete"):  # FIXME: rename has_operation()
+    #     """
+    #     Verifies if the instance contains operation set for any of its attributes
+    #     :param operation: string
+    #     :return: boolean
+    #     """
+    #     if self.get_operation() == operation:
+    #         return True
+    #     for k, v in self.__dict__.items():
+    #         if isinstance(v, Yang) and k is not "_parent":
+    #             if v.contains_operation(operation):
+    #                 return True
+    #     return False
 
     def get_operation(self):
         """
@@ -1217,8 +1223,7 @@ class Leaf(Yang):
 
     def _diff(self, source):
         """
-        Overrides Yang.reduce(): Delete instances which equivalently exist in the reference tree otherwise updates
-        operation attribute.
+        Overrides Yang._diff(): ...
         The call is recursive, a node is removed if and only if all of its children are removed.
         :param reference: instance of Yang
         :return: boolean
@@ -1862,16 +1867,17 @@ class ListedYang(Yang):
             setattr(inst, key, getattr(self, key).full_copy())
         return inst
 
-    def reduce(self, reference):
-        """
-        Delete instances which equivalently exist in the reference tree otherwise updates operation attribute
-        The call is recursive, a node is removed if and only if all of its children are removed.
-        :param reference: Yang
-        :return:
-        """
-        keys = self.get_key_tags()
-        reduce_ = super(ListedYang, self).reduce(reference, keys)
-        return reduce_
+    # def reduce(self, reference):
+    #     """
+    #     Delete instances which equivalently exist in the reference tree otherwise updates operation attribute
+    #     The call is recursive, a node is removed if and only if all of its children are removed.
+    #     :param reference: Yang
+    #     :return:
+    #     """
+    #
+    #     keys = self.get_key_tags()
+    #     reduce_ = super(ListedYang, self).reduce(reference, keys)
+    #     return reduce_
 
 
     def _diff(self, source):
@@ -2129,6 +2135,14 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         self._data[key] = value
         value.set_parent(self)
 
+    def __delitem__(self, key):
+        """
+        Delete key from dictionary
+        :param key: string
+        :return: -
+        """
+        del self._data[key]
+
     def clear_data(self):
         """
         Clear ListYang dict
@@ -2147,7 +2161,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         for key in self.keys():
             if key in reference.keys():
                 if self[key].reduce(reference[key]):
-                    self[key].delete()
+                    del self[key]
                 else:
                     # self[key].set_operation("replace", recursive=False, force=False)
                     _reduce = False
