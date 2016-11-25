@@ -1,7 +1,6 @@
 module virtualizer_mappings {
   namespace "urn:5gex:virtualizer_mappings";
   prefix "virtualizer_mappings";
-  import virtualizer_types { prefix vt; }
 
   organization "ETH";
   contact "Robert Szabo <robert.szabo@ericsson.com>";
@@ -10,11 +9,20 @@ module virtualizer_mappings {
     description "Mapping resolution service for the virtualizer";
   }
 
+  grouping object{
+    leaf object {
+      type leafref {
+	path "";
+      }
+  }
+
   grouping mapping{
-    uses vt:object;
+    uses object;
     container target {
-      uses vt:destination;
-      uses vt:object;
+      uses object;
+      leaf domain {
+      type string;
+      }
     }
   }
   

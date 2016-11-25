@@ -1,9 +1,9 @@
-#    Filename: virtualizer_mappings.py		 Created: 2016-11-19  17:06:59
+#    Filename: virtualizer_mappings.py		 Created: 2016-11-25  14:13:23
 #    This file was automatically created by a pyang plugin (PNC) developed at Ericsson Hungary Ltd., 2015
 #    Authors: Robert Szabo, Balazs Miriszlai, Akos Recse, Raphael Vicente Rosa
 #    Credits: Robert Szabo, Raphael Vicente Rosa, David Jocha, Janos Elek, Balazs Miriszlai, Akos Recse
 #    Contact: Robert Szabo <robert.szabo@ericsson.com>
-            
+
 #    Yang file info:
 #    Namespace: urn:5gex:virtualizer_mappings
 #    Prefix: virtualizer_mappings
@@ -11,7 +11,7 @@
 #    Contact: Robert Szabo <robert.szabo@ericsson.com>
 #    Description: Mapping resolution service for the virtualizer
 
-__copyright__ = "Copyright 2015, Ericsson Hungary Ltd."
+__copyright__ = "Copyright 2016, Ericsson Hungary Ltd."
 __license__ = "Apache License, Version 2.0"
 __version__ = "2016-11-19"
 
@@ -29,15 +29,23 @@ __version__ = "2016-11-19"
 
 
 from baseclasses import *
-import virtualizer_types as vt
+
+
+# YANG construct: grouping object
+class GroupingObject(Yang):
+    def __init__(self, tag, parent=None, object=None):
+        super(GroupingObject, self).__init__(tag, parent)
+        self._sorted_children = ["object"]
+        # yang construct: leaf
+        self.object = Leafref("object", parent=self, value=object)
+        """:type: Leafref"""
 
 
 # YANG construct: grouping mapping
-class GroupingMapping(Yang):
-    def __init__(self, tag, parent=None, target=None):
-        super(GroupingMapping, self).__init__(tag, parent)
+class GroupingMapping(GroupingObject):
+    def __init__(self, tag, parent=None, object=None, target=None):
+        GroupingObject.__init__(self, tag, parent, object)
         self._sorted_children = ["object", "target"]
-        vt.GroupingObject.__init__(self, tag, parent)
         # yang construct: container
         self.target = None
         """:type: MappingTarget"""
@@ -49,19 +57,20 @@ class GroupingMapping(Yang):
 
 # YANG construct: list mapping
 class Mapping(ListedYang, GroupingMapping):
-    def __init__(self, tag="mapping", parent=None, target=None):
+    def __init__(self, tag="mapping", parent=None, object=None, target=None):
         ListedYang.__init__(self, "mapping", ["object"])
-        GroupingMapping.__init__(self, tag, parent, target)
+        GroupingMapping.__init__(self, tag, parent, object, target)
         self._sorted_children = ["object", "target"]
 
 
 # YANG construct: container target
-class MappingTarget(Yang):
-    def __init__(self, tag="target", parent=None):
-        super(MappingTarget, self).__init__(tag, parent)
-        self._sorted_children = ["domain", "object"]
-        vt.GroupingDestination.__init__(self, tag, parent)
-        vt.GroupingObject.__init__(self, tag, parent)
+class MappingTarget(GroupingObject):
+    def __init__(self, tag="target", parent=None, object=None, domain=None):
+        GroupingObject.__init__(self, tag, parent, object)
+        self._sorted_children = ["object", "domain"]
+        # yang construct: leaf
+        self.domain = StringLeaf("domain", parent=self, value=domain)
+        """:type: StringLeaf"""
 
 
 # YANG construct: container mappings
