@@ -101,18 +101,18 @@ class InfoTops(Yang):
         super(InfoTops, self).__init__(tag, parent)
         self._sorted_children = ["top"]
         # yang construct: list
-        self.log = ListYang("top", parent=self, type=Element)
+        self.top = ListYang("top", parent=self, type=Element)
         """:type: ListYang(Element)"""
 
     def add(self, item):
-        return self.log.add(item)
+        return self.top.add(item)
 
     def remove(self, item):
-        return self.log.remove(item)
+        return self.top.remove(item)
 
     def __getitem__(self, key):
-        return self.log[key]
+        return self.top[key]
 
     def __iter__(self):
-        return self.log.itervalues()
+        return self.top.itervalues()
 
