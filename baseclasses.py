@@ -153,7 +153,7 @@ class Yang(object):
         else:
             self.__dict__[key] = value
 
-    def get_next(self, children=None, operation=None):
+    def get_next(self, children=None, operation=None, _called_from_parent_=False):
         """
         Returns the next Yang element followed by the one called for. It can be used for in-depth traversar of the yang tree.
         :param children: Yang (for up level call to hand over the callee children)
@@ -170,7 +170,9 @@ class Yang(object):
                         if self.__dict__[self._sorted_children[i]].has_operation(operation):
                             return self.__dict__[self._sorted_children[i]]
                         else:
-                            return self.__dict__[self._sorted_children[i]].get_next(operation=operation)
+                            res = self.__dict__[self._sorted_children[i]].get_next(operation=operation, _called_from_parent_=True)
+                            if res is not None:
+                                return res
                     i += 1
             else:
                 while i < len(self._sorted_children):
@@ -183,11 +185,14 @@ class Yang(object):
                         if self.__dict__[self._sorted_children[i]].has_operation(operation):
                             return self.__dict__[self._sorted_children[i]]
                         else:
-                            return self.__dict__[self._sorted_children[i]].get_next(operation=operation)
+                            res = self.__dict__[self._sorted_children[i]].get_next(operation=operation, _called_from_parent_=True)
+                            if res is not None:
+                                return res
                     i += 1
-        if self._parent is None:
-            return None
-        return self._parent.get_next(self, operation)
+        # go to parent
+        if (self._parent is not None) and (not _called_from_parent_):
+            return self._parent.get_next(self, operation)
+        return None
 
     def get_attr(self, attrib, v=None):
         if hasattr(self, attrib):
@@ -1908,7 +1913,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         self._data = OrderedDict()
         self._type = type
 
-    def get_next(self, children=None, operation=None):
+    def get_next(self, children=None, operation=None, _called_from_parent_=False):
         """
         Overrides Yang method. Returns the next Yang element followed by the one called for. It can be used for in-depth traversar of the yang tree.
         :param children: Yang (for up level call to hand over the callee children)
@@ -1922,33 +1927,26 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
                 if self._data[key].has_operation(operation):
                     return self._data[key]
                 else:
-                    return self._data[key].get_next(operation=operation)
-            # go to parent
-            if self._parent is not None:
-                return self._parent.get_next(self, operation)
-            else:
-                return None
+                    res = self._data[key].get_next(operation=operation, _called_from_parent_=True)
+                    if res is not None:
+                        return res
         else:
             # pretty tricky internal dic access, see http://stackoverflow.com/questions/12328184/how-to-get-the-next-item-in-an-ordereddict
             next = self._data._OrderedDict__map[children.keys()][1]
-            if not (next is self._data._OrderedDict__root):
+            while not (next is self._data._OrderedDict__root):
                 if self._data[next[2]].has_operation(operation):
                     return self._data[next[2]]
                 else:
-                    return self._data[next[2]].get_next(operation=operation)
-                    # children = self._data[next[2]]
-                    # next = self._data._OrderedDict__map[children.keys()][1]
-            if self._parent is not None:
-                return self.get_parent().get_next(self, operation)
-            else:
-                return None
+                    res = self._data[next[2]].get_next(operation=operation, _called_from_parent_=True)
+                    if res is not None:
+                        return res
+                    children = self._data[next[2]]
+                    next = self._data._OrderedDict__map[children.keys()][1]
 
-                # if next is self._data._OrderedDict__root:
-                #     if self._parent is not None:
-                #         return self._parent.get_next(self, operation)
-                #     else:
-                #         return None
-                # return self._data[next[2]]
+        # go to parent
+        if (self._parent is not None) and (not _called_from_parent_):
+            return self._parent.get_next(self, operation)
+        return None
 
     def get_type(self):
         """
