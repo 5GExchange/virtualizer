@@ -67,6 +67,43 @@ module virtualizer {
     }
   }
 
+  grouping object {
+    leaf object {
+      type leafref {
+	path "";
+      }
+    }
+  }
+
+  grouping constraints {
+    list affinity {
+      min-elements 0;
+      key object;
+      uses object;
+    }
+    list antiaffinity {
+      min-elements 0;
+      key object;
+      uses object;
+    }
+    list variable {
+      min-elements 0;
+      key id;
+      leaf id{
+	type string;
+	mandatory true;
+      }
+      uses object;
+    }
+    list constraint{
+      min-elements 0;
+      key formula;
+      leaf formula{
+	type string;
+      }
+    }
+  }
+
   grouping l3-address {
     uses id-name;
     leaf configure {
@@ -254,6 +291,9 @@ module virtualizer {
     uses links;
     container resources{
       uses software-resource;
+    }
+    container constraints{
+      uses constraints;
     }
     uses metadata;
   }
