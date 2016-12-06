@@ -292,6 +292,10 @@ module virtualizer {
     container resources{
       uses software-resource;
     }
+    leaf connected {
+      type string;
+      mandatory false;
+    }
     container constraints{
       uses constraints;
     }

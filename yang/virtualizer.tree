@@ -53,6 +53,7 @@ module: virtualizer
       |     |  +--rw storage    string
       |     |  +--rw cost?      string
       |     |  +--rw zone?      string
+      |     +--rw connected?      string
       |     +--rw constraints
       |     |  +--rw affinity* [object]
       |     |  |  +--rw object    -> 
@@ -117,6 +118,7 @@ module: virtualizer
       |     |     |  +--rw storage    string
       |     |     |  +--rw cost?      string
       |     |     |  +--rw zone?      string
+      |     |     +--rw connected?     string
       |     |     +--rw constraints
       |     |     |  +--rw affinity* [object]
       |     |     |  |  +--rw object    -> 
@@ -182,6 +184,7 @@ module: virtualizer
       |     |        |  +--rw storage    string
       |     |        |  +--rw cost?      string
       |     |        |  +--rw zone?      string
+      |     |        +--rw connected?     string
       |     |        +--rw constraints
       |     |        |  +--rw affinity* [object]
       |     |        |  |  +--rw object    -> 
