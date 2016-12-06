@@ -1,4 +1,4 @@
-#    Filename: virtualizer.py		 Created: 2016-11-24  17:24:54
+#    Filename: virtualizer.py		 Created: 2016-12-06  18:17:21
 #    This file was automatically created by a pyang plugin (PNC) developed at Ericsson Hungary Ltd., 2015
 #    Authors: Robert Szabo, Balazs Miriszlai, Akos Recse, Raphael Vicente Rosa
 #    Credits: Robert Szabo, Raphael Vicente Rosa, David Jocha, Janos Elek, Balazs Miriszlai, Akos Recse
@@ -91,6 +91,83 @@ class GroupingLink_resource(Yang):
         # yang construct: leaf
         self.cost = StringLeaf("cost", parent=self, value=cost)
         """:type: StringLeaf"""
+
+
+# YANG construct: grouping object
+class GroupingObject(Yang):
+    def __init__(self, tag, parent=None, object=None):
+        super(GroupingObject, self).__init__(tag, parent)
+        self._sorted_children = ["object"]
+        # yang construct: leaf
+        self.object = Leafref("object", parent=self, value=object)
+        """:type: Leafref"""
+
+
+# YANG construct: grouping constraints
+class GroupingConstraints(Yang):
+    def __init__(self, tag, parent=None):
+        super(GroupingConstraints, self).__init__(tag, parent)
+        self._sorted_children = ["affinity", "antiaffinity", "variable", "constraint"]
+        # yang construct: list
+        self.affinity = ListYang("affinity", parent=self, type=ConstraintsAffinity)
+        """:type: ListYang(ConstraintsAffinity)"""
+        # yang construct: list
+        self.antiaffinity = ListYang("antiaffinity", parent=self, type=ConstraintsAntiaffinity)
+        """:type: ListYang(ConstraintsAntiaffinity)"""
+        # yang construct: list
+        self.variable = ListYang("variable", parent=self, type=ConstraintsVariable)
+        """:type: ListYang(ConstraintsVariable)"""
+        # yang construct: list
+        self.constraint = ListYang("constraint", parent=self, type=ConstraintsConstraint)
+        """:type: ListYang(ConstraintsConstraint)"""
+
+    def add(self, item):
+        return self.affinity.add(item)
+
+    def remove(self, item):
+        return self.affinity.remove(item)
+
+    def __getitem__(self, key):
+        return self.affinity[key]
+
+    def __iter__(self):
+        return self.affinity.itervalues()
+
+    def add(self, item):
+        return self.antiaffinity.add(item)
+
+    def remove(self, item):
+        return self.antiaffinity.remove(item)
+
+    def __getitem__(self, key):
+        return self.antiaffinity[key]
+
+    def __iter__(self):
+        return self.antiaffinity.itervalues()
+
+    def add(self, item):
+        return self.variable.add(item)
+
+    def remove(self, item):
+        return self.variable.remove(item)
+
+    def __getitem__(self, key):
+        return self.variable[key]
+
+    def __iter__(self):
+        return self.variable.itervalues()
+
+    def add(self, item):
+        return self.constraint.add(item)
+
+    def remove(self, item):
+        return self.constraint.remove(item)
+
+    def __getitem__(self, key):
+        return self.constraint[key]
+
+    def __iter__(self):
+        return self.constraint.itervalues()
 
 
 # YANG construct: grouping l3-address
@@ -253,11 +330,11 @@ class GroupingSoftware_resource(Yang):
 # YANG construct: grouping node
 class GroupingNode(GroupingId_name_type, GroupingLinks, GroupingMetadata):
     """Any node: infrastructure or NFs"""
-    def __init__(self, tag, parent=None, id=None, name=None, type=None, status=None, ports=None, links=None, resources=None):
+    def __init__(self, tag, parent=None, id=None, name=None, type=None, status=None, ports=None, links=None, resources=None, connected=None, constraints=None):
         GroupingId_name_type.__init__(self, tag, parent, id, name, type)
         GroupingLinks.__init__(self, tag, parent, links)
         GroupingMetadata.__init__(self, tag, parent)
-        self._sorted_children = ["id", "name", "type", "status", "ports", "links", "resources", "metadata"]
+        self._sorted_children = ["id", "name", "type", "status", "ports", "links", "resources", "connected", "constraints", "metadata"]
         # yang construct: leaf
         self.status = StringLeaf("status", parent=self, value=status)
         """:type: StringLeaf"""
@@ -275,6 +352,16 @@ class GroupingNode(GroupingId_name_type, GroupingLinks, GroupingMetadata):
             self.resources = resources
         else:
             self.resources = Software_resource(parent=self, tag="resources")
+        # yang construct: leaf
+        self.connected = StringLeaf("connected", parent=self, value=connected)
+        """:type: StringLeaf"""
+        # yang construct: container
+        self.constraints = None
+        """:type: Constraints"""
+        if constraints is not None:
+            self.constraints = constraints
+        else:
+            self.constraints = Constraints(parent=self, tag="constraints")
 
 
 # YANG construct: grouping nodes
@@ -301,10 +388,10 @@ class GroupingNodes(Yang):
 
 # YANG construct: grouping infra-node
 class GroupingInfra_node(GroupingNode, GroupingFlowtable):
-    def __init__(self, tag, parent=None, id=None, name=None, type=None, status=None, ports=None, links=None, resources=None, NF_instances=None, capabilities=None, flowtable=None):
-        GroupingNode.__init__(self, tag, parent, id, name, type, status, ports, links, resources)
+    def __init__(self, tag, parent=None, id=None, name=None, type=None, status=None, ports=None, links=None, resources=None, connected=None, constraints=None, NF_instances=None, capabilities=None, flowtable=None):
+        GroupingNode.__init__(self, tag, parent, id, name, type, status, ports, links, resources, connected, constraints)
         GroupingFlowtable.__init__(self, tag, parent, flowtable)
-        self._sorted_children = ["id", "name", "type", "status", "ports", "links", "resources", "metadata", "NF_instances", "capabilities", "flowtable"]
+        self._sorted_children = ["id", "name", "type", "status", "ports", "links", "resources", "connected", "constraints", "metadata", "NF_instances", "capabilities", "flowtable"]
         # yang construct: container
         self.NF_instances = None
         """:type: Nodes"""
@@ -324,7 +411,7 @@ class GroupingInfra_node(GroupingNode, GroupingFlowtable):
 # YANG construct: grouping virtualizer
 class GroupingVirtualizer(GroupingId_name, GroupingLinks, GroupingMetadata):
     """Grouping for a single virtualizer"""
-    def __init__(self, tag, parent=None, id=None, name=None, nodes=None, links=None, version='2016-07-08; compiled at 2016-11-24  17:24:54'):
+    def __init__(self, tag, parent=None, id=None, name=None, nodes=None, links=None, version='2016-07-08; compiled at 2016-12-06  18:17:21'):
         GroupingId_name.__init__(self, tag, parent, id, name)
         GroupingLinks.__init__(self, tag, parent, links)
         GroupingMetadata.__init__(self, tag, parent)
@@ -351,6 +438,43 @@ class MetadataMetadata(ListedYang):
         """:type: StringLeaf"""
         # yang construct: leaf
         self.value = StringLeaf("value", parent=self, value=value)
+        """:type: StringLeaf"""
+
+
+# YANG construct: list affinity
+class ConstraintsAffinity(ListedYang, GroupingObject):
+    def __init__(self, tag="affinity", parent=None, object=None):
+        ListedYang.__init__(self, "affinity", ["object"])
+        GroupingObject.__init__(self, tag, parent, object)
+        self._sorted_children = ["object"]
+
+
+# YANG construct: list antiaffinity
+class ConstraintsAntiaffinity(ListedYang, GroupingObject):
+    def __init__(self, tag="antiaffinity", parent=None, object=None):
+        ListedYang.__init__(self, "antiaffinity", ["object"])
+        GroupingObject.__init__(self, tag, parent, object)
+        self._sorted_children = ["object"]
+
+
+# YANG construct: list variable
+class ConstraintsVariable(ListedYang, GroupingObject):
+    def __init__(self, tag="variable", parent=None, id=None, object=None):
+        ListedYang.__init__(self, "variable", ["id"])
+        GroupingObject.__init__(self, tag, parent, object)
+        self._sorted_children = ["id", "object"]
+        # yang construct: leaf
+        self.id = StringLeaf("id", parent=self, value=id, mandatory=True)
+        """:type: StringLeaf"""
+
+
+# YANG construct: list constraint
+class ConstraintsConstraint(ListedYang):
+    def __init__(self, tag="constraint", parent=None, formula=None):
+        ListedYang.__init__(self, "constraint", ["formula"])
+        self._sorted_children = ["formula"]
+        # yang construct: leaf
+        self.formula = StringLeaf("formula", parent=self, value=formula)
         """:type: StringLeaf"""
 
 
@@ -388,18 +512,18 @@ class Port(ListedYang, GroupingPort):
 
 # YANG construct: list node
 class Node(ListedYang, GroupingNode):
-    def __init__(self, tag="node", parent=None, id=None, name=None, type=None, status=None, ports=None, links=None, resources=None):
+    def __init__(self, tag="node", parent=None, id=None, name=None, type=None, status=None, ports=None, links=None, resources=None, connected=None, constraints=None):
         ListedYang.__init__(self, "node", ["id"])
-        GroupingNode.__init__(self, tag, parent, id, name, type, status, ports, links, resources)
-        self._sorted_children = ["id", "name", "type", "status", "ports", "links", "resources", "metadata"]
+        GroupingNode.__init__(self, tag, parent, id, name, type, status, ports, links, resources, connected, constraints)
+        self._sorted_children = ["id", "name", "type", "status", "ports", "links", "resources", "connected", "constraints", "metadata"]
 
 
 # YANG construct: list node
 class Infra_node(ListedYang, GroupingInfra_node):
-    def __init__(self, tag="node", parent=None, id=None, name=None, type=None, status=None, ports=None, links=None, resources=None, NF_instances=None, capabilities=None, flowtable=None):
+    def __init__(self, tag="node", parent=None, id=None, name=None, type=None, status=None, ports=None, links=None, resources=None, connected=None, constraints=None, NF_instances=None, capabilities=None, flowtable=None):
         ListedYang.__init__(self, "node", ["id"])
-        GroupingInfra_node.__init__(self, tag, parent, id, name, type, status, ports, links, resources, NF_instances, capabilities, flowtable)
-        self._sorted_children = ["id", "name", "type", "status", "ports", "links", "resources", "metadata", "NF_instances", "capabilities", "flowtable"]
+        GroupingInfra_node.__init__(self, tag, parent, id, name, type, status, ports, links, resources, connected, constraints, NF_instances, capabilities, flowtable)
+        self._sorted_children = ["id", "name", "type", "status", "ports", "links", "resources", "connected", "constraints", "metadata", "NF_instances", "capabilities", "flowtable"]
 
 
 # YANG construct: container sap_data
@@ -552,6 +676,13 @@ class Software_resource(GroupingSoftware_resource):
         self._sorted_children = ["cpu", "mem", "storage", "cost", "zone"]
 
 
+# YANG construct: container constraints
+class Constraints(GroupingConstraints):
+    def __init__(self, tag="constraints", parent=None):
+        GroupingConstraints.__init__(self, tag, parent)
+        self._sorted_children = ["affinity", "antiaffinity", "variable", "constraint"]
+
+
 # YANG construct: container NF_instances
 class Nodes(GroupingNodes):
     def __init__(self, tag="NF_instances", parent=None):
@@ -597,7 +728,7 @@ class VirtualizerNodes(Yang):
 
 # YANG construct: container virtualizer
 class Virtualizer(GroupingVirtualizer):
-    def __init__(self, tag="virtualizer", parent=None, id=None, name=None, nodes=None, links=None, version='2016-07-08; compiled at 2016-11-24  17:24:54'):
+    def __init__(self, tag="virtualizer", parent=None, id=None, name=None, nodes=None, links=None, version='2016-07-08; compiled at 2016-12-06  18:17:21'):
         GroupingVirtualizer.__init__(self, tag, parent, id, name, nodes, links, version)
         self._sorted_children = ["id", "name", "nodes", "links", "metadata", "version"]
 

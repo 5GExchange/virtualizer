@@ -7,6 +7,7 @@ module: virtualizer
       |     +--rw id              string
       |     +--rw name?           string
       |     +--rw type            string
+      |     +--rw status?         string
       |     +--rw ports
       |     |  +--rw port* [id]
       |     |     +--rw id            string
@@ -52,14 +53,26 @@ module: virtualizer
       |     |  +--rw storage    string
       |     |  +--rw cost?      string
       |     |  +--rw zone?      string
+      |     +--rw connected?      string
+      |     +--rw constraints
+      |     |  +--rw affinity* [object]
+      |     |  |  +--rw object    -> 
+      |     |  +--rw antiaffinity* [object]
+      |     |  |  +--rw object    -> 
+      |     |  +--rw variable* [id]
+      |     |  |  +--rw id        string
+      |     |  |  +--rw object?   -> 
+      |     |  +--rw constraint* [formula]
+      |     |     +--rw formula    string
       |     +--rw metadata* [key]
       |     |  +--rw key      string
       |     |  +--rw value?   string
       |     +--rw NF_instances
       |     |  +--rw node* [id]
-      |     |     +--rw id           string
-      |     |     +--rw name?        string
-      |     |     +--rw type?        string
+      |     |     +--rw id             string
+      |     |     +--rw name?          string
+      |     |     +--rw type?          string
+      |     |     +--rw status?        string
       |     |     +--rw ports
       |     |     |  +--rw port* [id]
       |     |     |     +--rw id            string
@@ -105,15 +118,27 @@ module: virtualizer
       |     |     |  +--rw storage    string
       |     |     |  +--rw cost?      string
       |     |     |  +--rw zone?      string
+      |     |     +--rw connected?     string
+      |     |     +--rw constraints
+      |     |     |  +--rw affinity* [object]
+      |     |     |  |  +--rw object    -> 
+      |     |     |  +--rw antiaffinity* [object]
+      |     |     |  |  +--rw object    -> 
+      |     |     |  +--rw variable* [id]
+      |     |     |  |  +--rw id        string
+      |     |     |  |  +--rw object?   -> 
+      |     |     |  +--rw constraint* [formula]
+      |     |     |     +--rw formula    string
       |     |     +--rw metadata* [key]
       |     |        +--rw key      string
       |     |        +--rw value?   string
       |     +--rw capabilities
       |     |  +--rw supported_NFs
       |     |     +--rw node* [id]
-      |     |        +--rw id           string
-      |     |        +--rw name?        string
-      |     |        +--rw type?        string
+      |     |        +--rw id             string
+      |     |        +--rw name?          string
+      |     |        +--rw type?          string
+      |     |        +--rw status?        string
       |     |        +--rw ports
       |     |        |  +--rw port* [id]
       |     |        |     +--rw id            string
@@ -159,6 +184,17 @@ module: virtualizer
       |     |        |  +--rw storage    string
       |     |        |  +--rw cost?      string
       |     |        |  +--rw zone?      string
+      |     |        +--rw connected?     string
+      |     |        +--rw constraints
+      |     |        |  +--rw affinity* [object]
+      |     |        |  |  +--rw object    -> 
+      |     |        |  +--rw antiaffinity* [object]
+      |     |        |  |  +--rw object    -> 
+      |     |        |  +--rw variable* [id]
+      |     |        |  |  +--rw id        string
+      |     |        |  |  +--rw object?   -> 
+      |     |        |  +--rw constraint* [formula]
+      |     |        |     +--rw formula    string
       |     |        +--rw metadata* [key]
       |     |           +--rw key      string
       |     |           +--rw value?   string
