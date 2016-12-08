@@ -1,4 +1,4 @@
-#    Filename: virtualizer.py		 Created: 2016-12-06  18:17:21
+#    Filename: virtualizer.py		 Created: 2016-12-08  12:01:34
 #    This file was automatically created by a pyang plugin (PNC) developed at Ericsson Hungary Ltd., 2015
 #    Authors: Robert Szabo, Balazs Miriszlai, Akos Recse, Raphael Vicente Rosa
 #    Credits: Robert Szabo, Raphael Vicente Rosa, David Jocha, Janos Elek, Balazs Miriszlai, Akos Recse
@@ -411,7 +411,7 @@ class GroupingInfra_node(GroupingNode, GroupingFlowtable):
 # YANG construct: grouping virtualizer
 class GroupingVirtualizer(GroupingId_name, GroupingLinks, GroupingMetadata):
     """Grouping for a single virtualizer"""
-    def __init__(self, tag, parent=None, id=None, name=None, nodes=None, links=None, version='2016-07-08; compiled at 2016-12-06  18:17:21'):
+    def __init__(self, tag, parent=None, id=None, name=None, nodes=None, links=None, version='2016-07-08; compiled at 2016-12-08  12:01:34'):
         GroupingId_name.__init__(self, tag, parent, id, name)
         GroupingLinks.__init__(self, tag, parent, links)
         GroupingMetadata.__init__(self, tag, parent)
@@ -728,7 +728,7 @@ class VirtualizerNodes(Yang):
 
 # YANG construct: container virtualizer
 class Virtualizer(GroupingVirtualizer):
-    def __init__(self, tag="virtualizer", parent=None, id=None, name=None, nodes=None, links=None, version='2016-07-08; compiled at 2016-12-06  18:17:21'):
+    def __init__(self, tag="virtualizer", parent=None, id=None, name=None, nodes=None, links=None, version='2016-07-08; compiled at 2016-12-08  12:01:34'):
         GroupingVirtualizer.__init__(self, tag, parent, id, name, nodes, links, version)
         self._sorted_children = ["id", "name", "nodes", "links", "metadata", "version"]
 
