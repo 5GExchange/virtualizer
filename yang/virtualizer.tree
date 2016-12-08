@@ -17,6 +17,7 @@ module: virtualizer
       |     |     +--rw sap?          string
       |     |     +--rw sap_data
       |     |     |  +--rw technology?   string
+      |     |     |  +--rw role?         string
       |     |     |  +--rw resources
       |     |     |     +--rw delay?       string
       |     |     |     +--rw bandwidth?   string
@@ -82,6 +83,7 @@ module: virtualizer
       |     |     |     +--rw sap?          string
       |     |     |     +--rw sap_data
       |     |     |     |  +--rw technology?   string
+      |     |     |     |  +--rw role?         string
       |     |     |     |  +--rw resources
       |     |     |     |     +--rw delay?       string
       |     |     |     |     +--rw bandwidth?   string
@@ -148,6 +150,7 @@ module: virtualizer
       |     |        |     +--rw sap?          string
       |     |        |     +--rw sap_data
       |     |        |     |  +--rw technology?   string
+      |     |        |     |  +--rw role?         string
       |     |        |     |  +--rw resources
       |     |        |     |     +--rw delay?       string
       |     |        |     |     +--rw bandwidth?   string
