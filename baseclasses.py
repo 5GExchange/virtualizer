@@ -51,6 +51,24 @@ __EQ_IGNORED_ATTRIBUTES__ = ("_parent", "_sorted_children", "_referred", "_key_a
 
 __REDUCE_ATTRIBUTES__ = ("")
 
+def path_to_list(path):
+    _list = list()
+    _remaining = path
+    while ('[' in _remaining):
+        _begin, _remaining = _remaining.split('[', 1)
+        _mid, _remaining = _remaining.split(']', 1)
+        _p = _begin.split('/')
+        if len(_list) > 0:
+            _p.pop(0)
+        _list.extend(_p)
+        _list[-1] += '[' + _mid + ']'
+    _p = _remaining.split('/')
+    if len(_list) > 0:
+        _p.pop(0)
+    _list.extend(_p)
+    return _list
+
+
 class YangJson:
     @classmethod
     def elem_to_dict(cls, elem):
@@ -514,7 +532,7 @@ class Yang(object):
         :param at: int, position to check for (can be negative)
         :return: boolean, True if match; False otherwise
         """
-        p = self.get_path().split('/')
+        p = path_to_list(self.get_path())
         if at is not None:
             if len(p) > abs(at):
                 return p[at] == path
@@ -532,7 +550,7 @@ class Yang(object):
             path = source.get_path()
         if path == "":
             return self
-        p = path.split("/")
+        p = path_to_list(path)
         _copy_type = "empty"
         if len(p) == 1:
             _copy_type = "full"
@@ -543,7 +561,7 @@ class Yang(object):
             elif self.get_tag() == p[0]:
                 p.pop(0)
                 return self.create_path(source, path="/".join(p), target_copy_type=target_copy_type)
-            _p = self.get_path().split("/")
+            _p = path_to_list(self.get_path())
             if p[0] == _p[1]:
                 p.pop(0)
                 return self.create_path(source, path="/".join(p), target_copy_type=target_copy_type)
@@ -582,7 +600,10 @@ class Yang(object):
         if path == "":
             return self
 
-        p = path.split("/")
+        if type(path) in (list, tuple):
+            p = path
+        else:
+            p = path_to_list(path)
         l = p.pop(0)
         if path[0] == "/":  # absolute path
             if self.get_parent() is not None:
@@ -590,7 +611,7 @@ class Yang(object):
             if self.get_tag() == p[0]:
                 p.pop(0)
                 return self.walk_path("/".join(p), reference)
-            _p = self.get_path().split("/")
+            _p = path_to_list(self.get_path())
             if p[0] == _p[1]:
                 p.pop(0)
                 return self.walk_path("/".join(p), reference)
@@ -639,8 +660,8 @@ class Yang(object):
         """
         src = self.get_path()
         dst = target.get_path()
-        s = src.split("/")
-        d = dst.split("/")
+        s = path_to_list(src)
+        d = path_to_list(dst)
         if s[0] != d[0]:
             return dst
         i = 1
@@ -1670,8 +1691,8 @@ class Leafref(StringLeaf):
         if self.data is not None:
             if self.data[0] == "/":  # absolute path
                 return self.data
-            path = self.get_path().split("/")
-            steps = self.data.split("/")
+            path = path_to_list(self.get_path())
+            steps = path_to_list(self.data)
             _path = _walk(path, steps)
             while strip > 0:
                 _path.pop(-1)
