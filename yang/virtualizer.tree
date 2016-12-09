@@ -56,10 +56,12 @@ module: virtualizer
       |     |  +--rw zone?      string
       |     +--rw connected?      string
       |     +--rw constraints
-      |     |  +--rw affinity* [object]
-      |     |  |  +--rw object    -> 
-      |     |  +--rw antiaffinity* [object]
-      |     |  |  +--rw object    -> 
+      |     |  +--rw affinity* [id]
+      |     |  |  +--rw id        string
+      |     |  |  +--rw object?   -> 
+      |     |  +--rw antiaffinity* [id]
+      |     |  |  +--rw id        string
+      |     |  |  +--rw object?   -> 
       |     |  +--rw variable* [id]
       |     |  |  +--rw id        string
       |     |  |  +--rw object?   -> 
@@ -122,10 +124,12 @@ module: virtualizer
       |     |     |  +--rw zone?      string
       |     |     +--rw connected?     string
       |     |     +--rw constraints
-      |     |     |  +--rw affinity* [object]
-      |     |     |  |  +--rw object    -> 
-      |     |     |  +--rw antiaffinity* [object]
-      |     |     |  |  +--rw object    -> 
+      |     |     |  +--rw affinity* [id]
+      |     |     |  |  +--rw id        string
+      |     |     |  |  +--rw object?   -> 
+      |     |     |  +--rw antiaffinity* [id]
+      |     |     |  |  +--rw id        string
+      |     |     |  |  +--rw object?   -> 
       |     |     |  +--rw variable* [id]
       |     |     |  |  +--rw id        string
       |     |     |  |  +--rw object?   -> 
@@ -189,10 +193,12 @@ module: virtualizer
       |     |        |  +--rw zone?      string
       |     |        +--rw connected?     string
       |     |        +--rw constraints
-      |     |        |  +--rw affinity* [object]
-      |     |        |  |  +--rw object    -> 
-      |     |        |  +--rw antiaffinity* [object]
-      |     |        |  |  +--rw object    -> 
+      |     |        |  +--rw affinity* [id]
+      |     |        |  |  +--rw id        string
+      |     |        |  |  +--rw object?   -> 
+      |     |        |  +--rw antiaffinity* [id]
+      |     |        |  |  +--rw id        string
+      |     |        |  |  +--rw object?   -> 
       |     |        |  +--rw variable* [id]
       |     |        |  |  +--rw id        string
       |     |        |  |  +--rw object?   -> 
