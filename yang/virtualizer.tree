@@ -56,15 +56,18 @@ module: virtualizer
       |     |  +--rw zone?      string
       |     +--rw connected?      string
       |     +--rw constraints
-      |     |  +--rw affinity* [object]
-      |     |  |  +--rw object    -> 
-      |     |  +--rw antiaffinity* [object]
-      |     |  |  +--rw object    -> 
+      |     |  +--rw affinity* [id]
+      |     |  |  +--rw id        string
+      |     |  |  +--rw object?   -> 
+      |     |  +--rw antiaffinity* [id]
+      |     |  |  +--rw id        string
+      |     |  |  +--rw object?   -> 
       |     |  +--rw variable* [id]
       |     |  |  +--rw id        string
       |     |  |  +--rw object?   -> 
-      |     |  +--rw constraint* [formula]
-      |     |     +--rw formula    string
+      |     |  +--rw constraint* [id]
+      |     |     +--rw id         string
+      |     |     +--rw formula?   string
       |     +--rw metadata* [key]
       |     |  +--rw key      string
       |     |  +--rw value?   string
@@ -122,15 +125,18 @@ module: virtualizer
       |     |     |  +--rw zone?      string
       |     |     +--rw connected?     string
       |     |     +--rw constraints
-      |     |     |  +--rw affinity* [object]
-      |     |     |  |  +--rw object    -> 
-      |     |     |  +--rw antiaffinity* [object]
-      |     |     |  |  +--rw object    -> 
+      |     |     |  +--rw affinity* [id]
+      |     |     |  |  +--rw id        string
+      |     |     |  |  +--rw object?   -> 
+      |     |     |  +--rw antiaffinity* [id]
+      |     |     |  |  +--rw id        string
+      |     |     |  |  +--rw object?   -> 
       |     |     |  +--rw variable* [id]
       |     |     |  |  +--rw id        string
       |     |     |  |  +--rw object?   -> 
-      |     |     |  +--rw constraint* [formula]
-      |     |     |     +--rw formula    string
+      |     |     |  +--rw constraint* [id]
+      |     |     |     +--rw id         string
+      |     |     |     +--rw formula?   string
       |     |     +--rw metadata* [key]
       |     |        +--rw key      string
       |     |        +--rw value?   string
@@ -189,15 +195,18 @@ module: virtualizer
       |     |        |  +--rw zone?      string
       |     |        +--rw connected?     string
       |     |        +--rw constraints
-      |     |        |  +--rw affinity* [object]
-      |     |        |  |  +--rw object    -> 
-      |     |        |  +--rw antiaffinity* [object]
-      |     |        |  |  +--rw object    -> 
+      |     |        |  +--rw affinity* [id]
+      |     |        |  |  +--rw id        string
+      |     |        |  |  +--rw object?   -> 
+      |     |        |  +--rw antiaffinity* [id]
+      |     |        |  |  +--rw id        string
+      |     |        |  |  +--rw object?   -> 
       |     |        |  +--rw variable* [id]
       |     |        |  |  +--rw id        string
       |     |        |  |  +--rw object?   -> 
-      |     |        |  +--rw constraint* [formula]
-      |     |        |     +--rw formula    string
+      |     |        |  +--rw constraint* [id]
+      |     |        |     +--rw id         string
+      |     |        |     +--rw formula?   string
       |     |        +--rw metadata* [key]
       |     |           +--rw key      string
       |     |           +--rw value?   string

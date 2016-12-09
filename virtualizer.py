@@ -1,4 +1,4 @@
-#    Filename: virtualizer.py		 Created: 2016-12-08  12:01:34
+#    Filename: virtualizer.py		 Created: 2016-12-09  12:50:20
 #    This file was automatically created by a pyang plugin (PNC) developed at Ericsson Hungary Ltd., 2015
 #    Authors: Robert Szabo, Balazs Miriszlai, Akos Recse, Raphael Vicente Rosa
 #    Credits: Robert Szabo, Raphael Vicente Rosa, David Jocha, Janos Elek, Balazs Miriszlai, Akos Recse
@@ -411,7 +411,7 @@ class GroupingInfra_node(GroupingNode, GroupingFlowtable):
 # YANG construct: grouping virtualizer
 class GroupingVirtualizer(GroupingId_name, GroupingLinks, GroupingMetadata):
     """Grouping for a single virtualizer"""
-    def __init__(self, tag, parent=None, id=None, name=None, nodes=None, links=None, version='2016-07-08; compiled at 2016-12-08  12:01:34'):
+    def __init__(self, tag, parent=None, id=None, name=None, nodes=None, links=None, version='2016-07-08; compiled at 2016-12-09  12:50:20'):
         GroupingId_name.__init__(self, tag, parent, id, name)
         GroupingLinks.__init__(self, tag, parent, links)
         GroupingMetadata.__init__(self, tag, parent)
@@ -443,18 +443,24 @@ class MetadataMetadata(ListedYang):
 
 # YANG construct: list affinity
 class ConstraintsAffinity(ListedYang, GroupingObject):
-    def __init__(self, tag="affinity", parent=None, object=None):
-        ListedYang.__init__(self, "affinity", ["object"])
+    def __init__(self, tag="affinity", parent=None, id=None, object=None):
+        ListedYang.__init__(self, "affinity", ["id"])
         GroupingObject.__init__(self, tag, parent, object)
-        self._sorted_children = ["object"]
+        self._sorted_children = ["id", "object"]
+        # yang construct: leaf
+        self.id = StringLeaf("id", parent=self, value=id, mandatory=True)
+        """:type: StringLeaf"""
 
 
 # YANG construct: list antiaffinity
 class ConstraintsAntiaffinity(ListedYang, GroupingObject):
-    def __init__(self, tag="antiaffinity", parent=None, object=None):
-        ListedYang.__init__(self, "antiaffinity", ["object"])
+    def __init__(self, tag="antiaffinity", parent=None, id=None, object=None):
+        ListedYang.__init__(self, "antiaffinity", ["id"])
         GroupingObject.__init__(self, tag, parent, object)
-        self._sorted_children = ["object"]
+        self._sorted_children = ["id", "object"]
+        # yang construct: leaf
+        self.id = StringLeaf("id", parent=self, value=id, mandatory=True)
+        """:type: StringLeaf"""
 
 
 # YANG construct: list variable
@@ -470,9 +476,12 @@ class ConstraintsVariable(ListedYang, GroupingObject):
 
 # YANG construct: list constraint
 class ConstraintsConstraint(ListedYang):
-    def __init__(self, tag="constraint", parent=None, formula=None):
-        ListedYang.__init__(self, "constraint", ["formula"])
-        self._sorted_children = ["formula"]
+    def __init__(self, tag="constraint", parent=None, id=None, formula=None):
+        ListedYang.__init__(self, "constraint", ["id"])
+        self._sorted_children = ["id", "formula"]
+        # yang construct: leaf
+        self.id = StringLeaf("id", parent=self, value=id, mandatory=True)
+        """:type: StringLeaf"""
         # yang construct: leaf
         self.formula = StringLeaf("formula", parent=self, value=formula)
         """:type: StringLeaf"""
@@ -728,7 +737,7 @@ class VirtualizerNodes(Yang):
 
 # YANG construct: container virtualizer
 class Virtualizer(GroupingVirtualizer):
-    def __init__(self, tag="virtualizer", parent=None, id=None, name=None, nodes=None, links=None, version='2016-07-08; compiled at 2016-12-08  12:01:34'):
+    def __init__(self, tag="virtualizer", parent=None, id=None, name=None, nodes=None, links=None, version='2016-07-08; compiled at 2016-12-09  12:50:20'):
         GroupingVirtualizer.__init__(self, tag, parent, id, name, nodes, links, version)
         self._sorted_children = ["id", "name", "nodes", "links", "metadata", "version"]
 

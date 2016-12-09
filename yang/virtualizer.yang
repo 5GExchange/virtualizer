@@ -78,12 +78,20 @@ module virtualizer {
   grouping constraints {
     list affinity {
       min-elements 0;
-      key object;
+      key id;
+      leaf id {
+        type string;
+  	mandatory true;
+    }
       uses object;
     }
     list antiaffinity {
       min-elements 0;
-      key object;
+      key id;
+      leaf id {
+        type string;
+	mandatory true;
+      }
       uses object;
     }
     list variable {
@@ -97,7 +105,11 @@ module virtualizer {
     }
     list constraint{
       min-elements 0;
-      key formula;
+      key id;
+      leaf id{
+	type string;
+	mandatory true;
+      }
       leaf formula{
 	type string;
       }
