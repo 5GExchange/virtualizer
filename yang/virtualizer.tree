@@ -65,8 +65,9 @@ module: virtualizer
       |     |  +--rw variable* [id]
       |     |  |  +--rw id        string
       |     |  |  +--rw object?   -> 
-      |     |  +--rw constraint* [formula]
-      |     |     +--rw formula    string
+      |     |  +--rw constraint* [id]
+      |     |     +--rw id         string
+      |     |     +--rw formula?   string
       |     +--rw metadata* [key]
       |     |  +--rw key      string
       |     |  +--rw value?   string
@@ -133,8 +134,9 @@ module: virtualizer
       |     |     |  +--rw variable* [id]
       |     |     |  |  +--rw id        string
       |     |     |  |  +--rw object?   -> 
-      |     |     |  +--rw constraint* [formula]
-      |     |     |     +--rw formula    string
+      |     |     |  +--rw constraint* [id]
+      |     |     |     +--rw id         string
+      |     |     |     +--rw formula?   string
       |     |     +--rw metadata* [key]
       |     |        +--rw key      string
       |     |        +--rw value?   string
@@ -202,8 +204,9 @@ module: virtualizer
       |     |        |  +--rw variable* [id]
       |     |        |  |  +--rw id        string
       |     |        |  |  +--rw object?   -> 
-      |     |        |  +--rw constraint* [formula]
-      |     |        |     +--rw formula    string
+      |     |        |  +--rw constraint* [id]
+      |     |        |     +--rw id         string
+      |     |        |     +--rw formula?   string
       |     |        +--rw metadata* [key]
       |     |           +--rw key      string
       |     |           +--rw value?   string

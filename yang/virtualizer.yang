@@ -105,7 +105,11 @@ module virtualizer {
     }
     list constraint{
       min-elements 0;
-      key formula;
+      key id;
+      leaf id{
+	type string;
+	mandatory true;
+      }
       leaf formula{
 	type string;
       }
