@@ -45,7 +45,7 @@ __EDIT_OPERATION_TYPE_ENUMERATION__ = (  # see https://tools.ietf.org/html/rfc62
     "remove"
 )
 
-__IGNORED_ATTRIBUTES__ = ("_parent", "_tag", "_sorted_children", "_referred", "_key_attributes", "version")
+__IGNORED_ATTRIBUTES__ = ("_parent", "_tag", "_sorted_children", "_referred", "_key_attributes", "version", "_sh")
 __EQ_IGNORED_ATTRIBUTES__ = ("_parent", "_sorted_children", "_referred", "_key_attributes", "version")
 
 
@@ -976,7 +976,8 @@ class Yang(object):
         """
         if self.get_parent() is not None:
             if isinstance(self, ListedYang):
-                self.get_parent().remove(self)
+                # self.get_parent().remove(self)
+                self._parent.remove(self)
             else:
                 self.get_parent().__dict__[
                     self.get_tag()] = None  # FIXME: tag is not necessarily Python naming conform!
