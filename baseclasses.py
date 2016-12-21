@@ -46,7 +46,7 @@ __EDIT_OPERATION_TYPE_ENUMERATION__ = (  # see https://tools.ietf.org/html/rfc62
     "remove"
 )
 
-__IGNORED_ATTRIBUTES__ = ("_parent", "_tag", "_sorted_children", "_referred", "_key_attributes", "version")
+__IGNORED_ATTRIBUTES__ = ("_parent", "_tag", "_sorted_children", "_referred", "_key_attributes", "version", "_sh")
 __EQ_IGNORED_ATTRIBUTES__ = ("_parent", "_sorted_children", "_referred", "_key_attributes", "version")
 
 __REDUCE_ATTRIBUTES__ = ("")

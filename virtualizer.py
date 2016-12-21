@@ -121,54 +121,6 @@ class GroupingConstraints(Yang):
         self.constraint = ListYang("constraint", parent=self, type=ConstraintsConstraint)
         """:type: ListYang(ConstraintsConstraint)"""
 
-    def add(self, item):
-        return self.affinity.add(item)
-
-    def remove(self, item):
-        return self.affinity.remove(item)
-
-    def __getitem__(self, key):
-        return self.affinity[key]
-
-    def __iter__(self):
-        return self.affinity.itervalues()
-
-    def add(self, item):
-        return self.antiaffinity.add(item)
-
-    def remove(self, item):
-        return self.antiaffinity.remove(item)
-
-    def __getitem__(self, key):
-        return self.antiaffinity[key]
-
-    def __iter__(self):
-        return self.antiaffinity.itervalues()
-
-    def add(self, item):
-        return self.variable.add(item)
-
-    def remove(self, item):
-        return self.variable.remove(item)
-
-    def __getitem__(self, key):
-        return self.variable[key]
-
-    def __iter__(self):
-        return self.variable.itervalues()
-
-    def add(self, item):
-        return self.constraint.add(item)
-
-    def remove(self, item):
-        return self.constraint.remove(item)
-
-    def __getitem__(self, key):
-        return self.constraint[key]
-
-    def __iter__(self):
-        return self.constraint.itervalues()
-
 
 # YANG construct: grouping l3-address
 class GroupingL3_address(GroupingId_name):
