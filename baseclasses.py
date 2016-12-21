@@ -2104,6 +2104,9 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         """
         if self._parent is not None:
             return self._parent.get_path()
+        # if no parent, let's assume root
+        return "/"
+
 
     def _et(self, node, inherited=False, ordered=True):
         """
