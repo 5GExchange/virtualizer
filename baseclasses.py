@@ -46,6 +46,8 @@ __EDIT_OPERATION_TYPE_ENUMERATION__ = (  # see https://tools.ietf.org/html/rfc62
     "remove"
 )
 
+DEFAULT = object()
+
 __IGNORED_ATTRIBUTES__ = ("_parent", "_tag", "_sorted_children", "_referred", "_key_attributes", "version", "_sh")
 __EQ_IGNORED_ATTRIBUTES__ = ("_parent", "_sorted_children", "_referred", "_key_attributes", "version")
 
@@ -212,13 +214,16 @@ class Yang(object):
             return self._parent.get_next(self, operation)
         return None
 
-    def get_attr(self, attrib, v=None):
+    def get_attr(self, attrib, v=None, default=DEFAULT):
         if hasattr(self, attrib):
             return self.__dict__[attrib]
         if (v is not None) and isinstance(v, Yang):
             _v = v.walk_path(self.get_path())
             if hasattr(_v, attrib):
                 return _v.__dict__[attrib]
+        if default is not DEFAULT:
+            # default return is given
+            return default
         raise ValueError("Attrib={attrib} cannot be found in self={self} and other={v}".format(
                 self=self.get_as_text(), v=v.get_as_text()))
 
@@ -2104,6 +2109,9 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         """
         if self._parent is not None:
             return self._parent.get_path()
+        # if no parent, let's assume root
+        return "/"
+
 
     def _et(self, node, inherited=False, ordered=True):
         """
