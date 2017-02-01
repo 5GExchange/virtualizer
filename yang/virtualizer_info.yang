@@ -1,0 +1,57 @@
+module virtualizer_info {
+  namespace "urn:unify:virtualizer_info";
+  prefix "virtualizer_info";
+  organization "ETH";
+  contact "Robert Szabo <robert.szabo@ericsson.com>";
+
+  revision "2016-10-09" {
+    description "Monitoring support for the virtualizer";
+  }
+
+  grouping object{
+    leaf object {
+      type leafref {
+	     path "";
+      }
+    }
+  }
+
+  grouping infoelement{
+    uses object;
+    leaf data {
+      type string;
+    }
+  }
+
+  grouping connection{
+    uses object;
+    container objects{
+      list object{
+         key object;
+         uses object;
+      }
+    }
+  }
+
+  container info {
+    container logs{
+      list log {
+        key "object";
+        uses infoelement;
+      }
+    }
+    container tops{
+      list top{
+        key "object";
+        uses infoelement;
+      }
+    }
+    container connections{
+      list connection{
+        key "object";
+        uses connection;
+      }
+    }
+
+  }
+}
