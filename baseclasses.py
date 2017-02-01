@@ -1763,7 +1763,7 @@ class Leafref(StringLeaf):
         :return: -
         """
         self.data = None
-        self.target = None;
+        self.target = None
 
     def _diff(self, source):
         """
@@ -1818,7 +1818,7 @@ class ListedYang(Yang):
         :return: boolean
         """
         if self._operation is not None:
-            return True;
+            return True
         ignores = list()
         if ignore_key:
             ignores = self._key_attributes
