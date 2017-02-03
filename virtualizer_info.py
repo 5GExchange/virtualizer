@@ -167,7 +167,7 @@ class InfoTops(Yang):
         super(InfoTops, self).__init__(tag, parent)
         self._sorted_children = ["top"]
         # yang construct: list
-        self.log = ListYang("top", parent=self, type=Infoelement)
+        self.top = ListYang("top", parent=self, type=Infoelement)
         """:type: ListYang(Infoelement)"""
 
     def add(self, item):
