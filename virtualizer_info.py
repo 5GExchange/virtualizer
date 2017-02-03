@@ -76,7 +76,7 @@ class Object(ListedYang, GroupingObject):
 # YANG construct: list log
 class Infoelement(ListedYang, GroupingInfoelement):
     def __init__(self, tag="log", parent=None, object=None, data=None):
-        ListedYang.__init__(self, "log", ["object"])
+        ListedYang.__init__(self, tag, ["object"])
         GroupingInfoelement.__init__(self, tag, parent, object, data)
         self._sorted_children = ["object", "data"]
 
