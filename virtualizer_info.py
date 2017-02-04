@@ -1,4 +1,4 @@
-#    Filename: virtualizer_info.py		 Created: 2017-02-01  11:29:18
+#    Filename: virtualizer_info.py		 Created: 2017-02-04  17:25:55
 #    This file was automatically created by a pyang plugin (PNC) developed at Ericsson Hungary Ltd., 2015
 #    Authors: Robert Szabo, Balazs Miriszlai, Akos Recse, Raphael Vicente Rosa
 #    Credits: Robert Szabo, Raphael Vicente Rosa, David Jocha, Janos Elek, Balazs Miriszlai, Akos Recse
@@ -11,7 +11,7 @@
 #    Contact: Robert Szabo <robert.szabo@ericsson.com>
 #    Description: Monitoring support for the virtualizer
 
-__copyright__ = "Copyright 2016, Ericsson Hungary Ltd."
+__copyright__ = "Copyright 2015, Ericsson Hungary Ltd."
 __license__ = "Apache License, Version 2.0"
 __version__ = "2016-10-09"
 
@@ -53,22 +53,30 @@ class GroupingInfoelement(GroupingObject):
 
 # YANG construct: grouping connection
 class GroupingConnection(GroupingObject):
-    def __init__(self, tag, parent=None, object=None, objects=None):
+    def __init__(self, tag, parent=None, object=None):
         GroupingObject.__init__(self, tag, parent, object)
         self._sorted_children = ["object", "objects"]
-        # yang construct: container
-        self.objects = None
-        """:type: ConnectionObjects"""
-        if objects is not None:
-            self.objects = objects
-        else:
-            self.objects = ConnectionObjects(parent=self, tag="objects")
+        # yang construct: list
+        self.objects = ListYang("objects", parent=self, type=Object)
+        """:type: ListYang(Object)"""
+
+    def add(self, item):
+        return self.objects.add(item)
+
+    def remove(self, item):
+        return self.objects.remove(item)
+
+    def __getitem__(self, key):
+        return self.objects[key]
+
+    def __iter__(self):
+        return self.objects.itervalues()
 
 
-# YANG construct: list object
+# YANG construct: list objects
 class Object(ListedYang, GroupingObject):
-    def __init__(self, tag="object", parent=None, object=None):
-        ListedYang.__init__(self, "object", ["object"])
+    def __init__(self, tag="objects", parent=None, object=None):
+        GListedYang.__init__(self, tag, ["object"])
         GroupingObject.__init__(self, tag, parent, object)
         self._sorted_children = ["object"]
 
@@ -76,39 +84,17 @@ class Object(ListedYang, GroupingObject):
 # YANG construct: list log
 class Infoelement(ListedYang, GroupingInfoelement):
     def __init__(self, tag="log", parent=None, object=None, data=None):
-        ListedYang.__init__(self, tag, ["object"])
+        GListedYang.__init__(self, tag, ["object"])
         GroupingInfoelement.__init__(self, tag, parent, object, data)
         self._sorted_children = ["object", "data"]
 
 
 # YANG construct: list connection
 class Connection(ListedYang, GroupingConnection):
-    def __init__(self, tag="connection", parent=None, object=None, objects=None):
-        ListedYang.__init__(self, "connection", ["object"])
-        GroupingConnection.__init__(self, tag, parent, object, objects)
+    def __init__(self, tag="connection", parent=None, object=None):
+        GListedYang.__init__(self, tag, ["object"])
+        GroupingConnection.__init__(self, tag, parent, object)
         self._sorted_children = ["object", "objects"]
-
-
-# YANG construct: container objects
-class ConnectionObjects(Yang):
-    def __init__(self, tag="objects", parent=None):
-        super(ConnectionObjects, self).__init__(tag, parent)
-        self._sorted_children = ["object"]
-        # yang construct: list
-        self.object = ListYang("object", parent=self, type=Object)
-        """:type: ListYang(Object)"""
-
-    def add(self, item):
-        return self.object.add(item)
-
-    def remove(self, item):
-        return self.object.remove(item)
-
-    def __getitem__(self, key):
-        return self.object[key]
-
-    def __iter__(self):
-        return self.object.itervalues()
 
 
 # YANG construct: container info
