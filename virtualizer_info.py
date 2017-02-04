@@ -171,16 +171,16 @@ class InfoTops(Yang):
         """:type: ListYang(Infoelement)"""
 
     def add(self, item):
-        return self.log.add(item)
+        return self.top.add(item)
 
     def remove(self, item):
-        return self.log.remove(item)
+        return self.top.remove(item)
 
     def __getitem__(self, key):
-        return self.log[key]
+        return self.top[key]
 
     def __iter__(self):
-        return self.log.itervalues()
+        return self.top.itervalues()
 
 
 # YANG construct: container connections

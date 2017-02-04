@@ -25,11 +25,9 @@ module virtualizer_info {
 
   grouping connection{
     uses object;
-    container objects{
-      list object{
-         key object;
-         uses object;
-      }
+    list objects{
+       key object;
+       uses object;
     }
   }
 
