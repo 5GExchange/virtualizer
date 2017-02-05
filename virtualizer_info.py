@@ -76,7 +76,7 @@ class GroupingConnection(GroupingObject):
 # YANG construct: list objects
 class Object(ListedYang, GroupingObject):
     def __init__(self, tag="objects", parent=None, object=None):
-        GListedYang.__init__(self, tag, ["object"])
+        ListedYang.__init__(self, tag, ["object"])
         GroupingObject.__init__(self, tag, parent, object)
         self._sorted_children = ["object"]
 
@@ -84,7 +84,7 @@ class Object(ListedYang, GroupingObject):
 # YANG construct: list log
 class Infoelement(ListedYang, GroupingInfoelement):
     def __init__(self, tag="log", parent=None, object=None, data=None):
-        GListedYang.__init__(self, tag, ["object"])
+        ListedYang.__init__(self, tag, ["object"])
         GroupingInfoelement.__init__(self, tag, parent, object, data)
         self._sorted_children = ["object", "data"]
 
@@ -92,7 +92,7 @@ class Infoelement(ListedYang, GroupingInfoelement):
 # YANG construct: list connection
 class Connection(ListedYang, GroupingConnection):
     def __init__(self, tag="connection", parent=None, object=None):
-        GListedYang.__init__(self, tag, ["object"])
+        ListedYang.__init__(self, tag, ["object"])
         GroupingConnection.__init__(self, tag, parent, object)
         self._sorted_children = ["object", "objects"]
 
