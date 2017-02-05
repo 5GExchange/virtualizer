@@ -38,8 +38,8 @@ def combine(self, source):
         id_bw = 'automaticallyadded_'+infra2+'-'+port2+'_'+infra1+'-'+port1
 
         while id_fw in self.links.link or id_bw in self.links.link:
-            id_fw = 'automaticallyadded_'+infra1+'-'+port1+'_'+infra2+'-'+port2+'_'+id_int
-            id_bw = 'automaticallyadded_'+infra2+'-'+port2+'_'+infra1+'-'+port1+'_'+id_int
+            id_fw = 'automaticallyadded_'+infra1+'-'+port1+'_'+infra2+'-'+port2+'_'+str(id_int)
+            id_bw = 'automaticallyadded_'+infra2+'-'+port2+'_'+infra1+'-'+port1+'_'+str(id_int)
             id_int += 1
 
 
