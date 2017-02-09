@@ -1928,6 +1928,51 @@ class ListedYang(Yang):
         return super(ListedYang, self).clear_subtree(keys)
 
 
+class LeafListYang(Yang):
+    """
+    Implementation of LeafList
+    """
+    def __init__(self, tag, parent=None, type=None):
+        super(ListYang, self).__init__(tag, parent)
+        self._data = OrderedDict()
+        self._type = type
+
+    pass
+
+    def get_next(self, children=None, operation=None, _called_from_parent_=False):
+        """
+        Overrides Yang method. Returns the next Yang element followed by the one called for. It can be used for in-depth traversar of the yang tree.
+        :param children: Yang (for up level call to hand over the callee children)
+        :return: Yang
+        """
+        if operation is None:
+            operation = (None,) + __EDIT_OPERATION_TYPE_ENUMERATION__
+        if children is None:
+            # return first key
+            for key in self._data:
+                if self._data[key].has_operation(operation):
+                    return self._data[key]
+                else:
+                    res = self._data[key].get_next(operation=operation, _called_from_parent_=True)
+                    if res is not None:
+                        return res
+        else:
+            # pretty tricky internal dic access, see http://stackoverflow.com/questions/12328184/how-to-get-the-next-item-in-an-ordereddict
+            next = self._data._OrderedDict__map[children.keys()][1]
+            while not (next is self._data._OrderedDict__root):
+                if self._data[next[2]].has_operation(operation):
+                    return self._data[next[2]]
+                else:
+                    res = self._data[next[2]].get_next(operation=operation, _called_from_parent_=True)
+                    if res is not None:
+                        return res
+                    children = self._data[next[2]]
+                    next = self._data._OrderedDict__map[children.keys()][1]
+
+        # go to parent
+        if (self._parent is not None) and (not _called_from_parent_):
+            return self._parent.get_next(self, operation)
+        return None
 
 class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
     """
