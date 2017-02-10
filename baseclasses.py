@@ -972,9 +972,10 @@ class Yang(object):
         for k, v in source.__dict__.items():
             if k is not "_parent":
                 if k not in self.__dict__.keys():
-                    self.__dict__[k] = copy.deepcopy(v)
-                    if isinstance(v, Yang):
-                        self.__dict__[k].set_parent(self)
+                    if not (execute and source.has_operation(('delete', 'remove'))):
+                        self.__dict__[k] = copy.deepcopy(v)
+                        if isinstance(v, Yang):
+                            self.__dict__[k].set_parent(self)
                 else:
                     if isinstance(v, Yang):
                         if isinstance(self.__dict__[k], Yang):
@@ -2320,10 +2321,10 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
                 self.add(item)
 
     def __merge__(self, source, execute=False):
-        #FIXME: handle operation delete/remove
         for item in source.keys():
             if item not in self.keys():
-                self.add(copy.deepcopy(source[item]))  # it should be a full_copy()
+                if not (execute and source.has_operation(('delete', 'remove'))):
+                    self.add(copy.deepcopy(source[item]))  # it should be a full_copy()
             else:
                 if isinstance(self[item], Yang) and type(self[item]) == type(source[item]):
                     # self[item].set_operation(target[item].get_operation())
