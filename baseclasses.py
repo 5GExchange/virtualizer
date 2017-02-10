@@ -1947,7 +1947,7 @@ class LeafListYang(Yang):
 
     pass
 
-    def get_next(self, children=None, operation=None, _called_from_parent_=False):
+    def get_next(self, children=None, operation=None, tags=None, _called_from_parent_=False):
         """
         Overrides Yang method. Returns the next Yang element followed by the one called for. It can be used for in-depth traversar of the yang tree.
         :param children: Yang (for up level call to hand over the callee children)
@@ -1958,29 +1958,66 @@ class LeafListYang(Yang):
         if children is None:
             # return first key
             for key in self._data:
-                if self._data[key].has_operation(operation):
+                if self._data[key].has_operation(operation) and self._data[key].match_tags(tags):
                     return self._data[key]
-                else:
-                    res = self._data[key].get_next(operation=operation, _called_from_parent_=True)
-                    if res is not None:
-                        return res
         else:
             # pretty tricky internal dic access, see http://stackoverflow.com/questions/12328184/how-to-get-the-next-item-in-an-ordereddict
             next = self._data._OrderedDict__map[children.keys()][1]
             while not (next is self._data._OrderedDict__root):
-                if self._data[next[2]].has_operation(operation):
+                if self._data[next[2]].has_operation(operation) and self._data[next[2]].match_tags(tags):
                     return self._data[next[2]]
-                else:
-                    res = self._data[next[2]].get_next(operation=operation, _called_from_parent_=True)
-                    if res is not None:
-                        return res
-                    children = self._data[next[2]]
-                    next = self._data._OrderedDict__map[children.keys()][1]
 
         # go to parent
         if (self._parent is not None) and (not _called_from_parent_):
-            return self._parent.get_next(self, operation)
+            return self._parent.get_next(self, operation=operation, tags=tags)
         return None
+
+    def add(self, item):
+        """
+        add single or a list of items
+        :param item: a single ListedYang or a list of ListedYang derivates
+        :return: item
+        """
+        if type(item) in (list, tuple):
+            for i in item:
+                if isinstance(i, ListedYang):
+                    self.add(i)
+                else:
+                    raise TypeError("Item must be ListedYang or a list of ListedYang!")
+        elif isinstance(item, ListedYang):
+            item.set_parent(self)
+            self[item.get_as_text()] = item
+        else:
+            raise TypeError("Item must be ListedYang or a list of ListedYang!")
+        return item
+
+    def remove(self, item):
+        '''
+        remove a single element from the list based on a key or a ListedYang
+        :param item: key (single or composit) or a ListedYang
+        :return: item
+        '''
+        if isinstance(item, ListedYang):
+            item = item.get_as_text()
+        return self._data.pop(item)
+
+    def _et(self, node, inherited=False, ordered=True):
+        """
+        Overides Yang method to each ListYang component be defined as SubElement of ElementTree
+        :param node: ElementTree
+        :return: ElementTree
+        """
+        if node is None:
+            node = ET.Element(self.get_tag())
+
+        if ordered:
+            ordered_keys = sorted(self.keys())
+            for k in ordered_keys:
+                self._data[k]._et(node, ordered)
+        else:
+            for v in self.values():
+                v._et(node, ordered)
+        return node
 
 class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
     """
