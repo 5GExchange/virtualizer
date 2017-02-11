@@ -1037,8 +1037,11 @@ class Yang(object):
         """
         if self.get_parent() is not None:
             if isinstance(self, ListedYang):
-                self._parent.remove(self) #FIXME: verify if this works correctly for all use-cases
-                # self.get_parent().remove(self)  # this does not work without a container around a list
+                try:
+                    # try to unregister object
+                    self._parent.remove(self)
+                except:
+                    pass
             else:
                 self.get_parent().__dict__[
                     self.get_tag()] = None  # FIXME: tag is not necessarily Python naming conform!
