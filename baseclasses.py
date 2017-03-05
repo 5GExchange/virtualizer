@@ -5,10 +5,10 @@
 #    Contact: Robert Szabo <robert.szabo@ericsson.com>
 
 
-__copyright__ = "Copyright 2016, Ericsson Hungary Ltd."
+__copyright__ = "Copyright 2017, Ericsson Hungary Ltd."
 __license__ = "Apache License, Version 2.0"
 __version_text__ = "yang/baseclasses/v5"
-__version__ = "2016-03-04"
+__version__ = "2017-03-05"
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -53,22 +53,77 @@ __EQ_IGNORED_ATTRIBUTES__ = ("_parent", "_sorted_children", "_referred", "_key_a
 
 __REDUCE_ATTRIBUTES__ = ("")
 
-def path_to_list(path):
-    _list = list()
-    _remaining = path
-    while ('[' in _remaining):
-        _begin, _remaining = _remaining.split('[', 1)
-        _mid, _remaining = _remaining.split(']', 1)
-        _p = _begin.split('/')
+
+class PathUtils:
+    @staticmethod
+    def path_to_list(path):
+        _list = list()
+        _remaining = path
+        while '[' in _remaining:
+            _begin, _remaining = _remaining.split('[', 1)
+            _mid, _remaining = _remaining.split(']', 1)
+            _p = _begin.split('/')
+            if len(_list) > 0:
+                _p.pop(0)
+            _list.extend(_p)
+            _list[-1] += '[' + _mid + ']'
+        _p = _remaining.split('/')
         if len(_list) > 0:
             _p.pop(0)
         _list.extend(_p)
-        _list[-1] += '[' + _mid + ']'
-    _p = _remaining.split('/')
-    if len(_list) > 0:
-        _p.pop(0)
-    _list.extend(_p)
-    return _list
+        return _list
+
+    @staticmethod
+    def split_tag_and_key_values(tag_with_key_values):
+        if (tag_with_key_values.find("[") > 0) and (tag_with_key_values.find("]") > 0):
+            tag = tag_with_key_values[0: tag_with_key_values.find("[")]
+            key_values = tag_with_key_values[tag_with_key_values.find("[") + 1: tag_with_key_values.rfind("]")]
+            kv = key_values.split("=")
+            return tag, kv
+        return tag_with_key_values, None
+
+    @staticmethod
+    def get_key_values_by_tag(path, tag):
+        p = path.split("/")
+        t = tag.split("/")
+        for i in range(1, len(p)+1):
+            _tag, _kv = PathUtils.split_tag_and_key_values(p[-i])
+            if (_tag == t[-1]) and (_kv is not None):
+                match = True
+                for j in range(1, min(len(p)+1-i,len(t))):
+                    __tag, __kv = PathUtils.split_tag_and_key_values(p[-i-j])
+                    if __tag != t[-1-j]:
+                        match = False
+                        break
+                if match:
+                    return _kv[1]
+        return None
+
+    @staticmethod
+    def has_tags(path, tags, at=None):
+        """
+        Check if path has tags (withough key and values
+        :param path: string, path
+        :param tags: pattern to check for
+        :param at: int, position to check for (can be negative)
+        :return: boolean, True if match; False otherwise
+        """
+        p = path.split("/")
+        _path = ""
+        for i in range(0, len(p)):
+            l = p[i]
+            if (l.find("[") > 0) and (l.find("]") > 0):
+                attrib = l[0: l.find("[")]
+                _path= _path + "/" + attrib
+            else:
+                _path= _path + l
+
+        p = path.split('/')
+        if at is not None:
+            if len(p) > abs(at):
+                return p[at] == path
+            return False
+        return path in p
 
 
 class YangJson:
@@ -545,7 +600,7 @@ class Yang(object):
         :param at: int, position to check for (can be negative)
         :return: boolean, True if match; False otherwise
         """
-        p = path_to_list(self.get_path())
+        p = PathUtils.path_to_list(self.get_path())
         if at is not None:
             if len(p) > abs(at):
                 return p[at] == path
@@ -563,7 +618,7 @@ class Yang(object):
             path = source.get_path()
         if path == "":
             return self
-        p = path_to_list(path)
+        p = PathUtils.path_to_list(path)
         _copy_type = "empty"
         if len(p) == 1:
             _copy_type = "full"
@@ -574,7 +629,7 @@ class Yang(object):
             elif self.get_tag() == p[0]:
                 p.pop(0)
                 return self.create_path(source, path="/".join(p), target_copy_type=target_copy_type)
-            _p = path_to_list(self.get_path())
+            _p = PathUtils.path_to_list(self.get_path())
             if p[0] == _p[1]:
                 p.pop(0)
                 return self.create_path(source, path="/".join(p), target_copy_type=target_copy_type)
@@ -616,7 +671,7 @@ class Yang(object):
         if type(path) in (list, tuple):
             p = path
         else:
-            p = path_to_list(path)
+            p = PathUtils.path_to_list(path)
         l = p.pop(0)
         if path[0] == "/":  # absolute path
             if self.get_parent() is not None:
@@ -624,7 +679,7 @@ class Yang(object):
             if self.get_tag() == p[0]:
                 p.pop(0)
                 return self.walk_path("/".join(p), reference)
-            _p = path_to_list(self.get_path())
+            _p = PathUtils.path_to_list(self.get_path())
             if p[0] == _p[1]:
                 p.pop(0)
                 return self.walk_path("/".join(p), reference)
@@ -673,8 +728,8 @@ class Yang(object):
         """
         src = self.get_path()
         dst = target.get_path()
-        s = path_to_list(src)
-        d = path_to_list(dst)
+        s = PathUtils.path_to_list(src)
+        d = PathUtils.path_to_list(dst)
         if s[0] != d[0]:
             return dst
         i = 1
@@ -1708,8 +1763,8 @@ class Leafref(StringLeaf):
         if self.data is not None:
             if self.data[0] == "/":  # absolute path
                 return self.data
-            path = path_to_list(self.get_path())
-            steps = path_to_list(self.data)
+            path = PathUtils.path_to_list(self.get_path())
+            steps = PathUtils.path_to_list(self.data)
             _path = _walk(path, steps)
             while strip > 0:
                 _path.pop(-1)
