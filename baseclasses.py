@@ -99,6 +99,7 @@ class PathUtils:
             while l1 == l2:
                 l1 = p1.pop(0)
                 l2 = p2.pop(0)
+            p2.insert(0, l2)
             p2.insert(0, '..')  # the paths divereged but both exist to this level
         except:
             pass  # catch exection that one of the path did not exist at this level, it is not a problem
