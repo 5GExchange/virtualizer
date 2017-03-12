@@ -74,6 +74,40 @@ class PathUtils:
         return _list
 
     @staticmethod
+    def add(_from, _to):
+        if _to[0] == '/':  # absolute path
+            return _to
+        p1 = PathUtils.path_to_list(_from)
+        p2 = PathUtils.path_to_list(_to)
+        l = p2.pop(0)
+        while l == "..":
+            p1.pop()
+            l = p2.pop(0)
+        p1.append(l)
+        p1 += p2
+        return '/'.join(p1)
+
+    @staticmethod
+    def diff(_from, _to):
+        if _to[0] != '/':  # relative path
+            return _to
+        p1 = PathUtils.path_to_list(_from)
+        p2 = PathUtils.path_to_list(_to)
+        l1 = p1.pop(0)
+        l2 = p2.pop(0)
+        try:
+            while l1 == l2:
+                l1 = p1.pop(0)
+                l2 = p2.pop(0)
+            p2.insert(0, '..')  # the paths divereged but both exist to this level
+        except:
+            pass  # catch exection that one of the path did not exist at this level, it is not a problem
+        while len(p1)>0:
+            p2.insert(0, "..")
+            p1.pop(0)
+        return '/'.join(p2)
+
+    @staticmethod
     def split_tag_and_key_values(tag_with_key_values):
         if (tag_with_key_values.find("[") > 0) and (tag_with_key_values.find("]") > 0):
             tag = tag_with_key_values[0: tag_with_key_values.find("[")]
@@ -81,6 +115,21 @@ class PathUtils:
             kv = key_values.split("=")
             return tag, kv
         return tag_with_key_values, None
+
+    @staticmethod
+    def split_path_segment_to_key_value_dict(path_segment):
+        if (path_segment.find("[") > 0) and (path_segment.find("]") > 0):
+            tag = path_segment[0: path_segment.find("[")]
+            keystring = path_segment[path_segment.find("[") + 1: path_segment.rfind("]")]
+            keys = dict(item.split("=") for item in keystring.split(","))
+            return tag, keys
+        return path_segment, None
+
+    @staticmethod
+    def merge_tag_and_keyst_to_path_segment(tag, keys):
+        if keys is None:
+            return tag
+        return tag + '[' + ','.join(['%s=%s' % (key, value) for (key, value) in keys.items()]) + ']'
 
     @staticmethod
     def get_key_values_by_tag(path, tag):
@@ -102,7 +151,7 @@ class PathUtils:
     @staticmethod
     def has_tags(path, tags, at=None):
         """
-        Check if path has tags (withough key and values
+        Check if path has tags (without key and values)
         :param path: string, path
         :param tags: pattern to check for
         :param at: int, position to check for (can be negative)
@@ -582,16 +631,19 @@ class Yang(object):
                 if isinstance(v, Yang):
                     v.delete()
 
-    def get_path(self):
+    def get_path(self, path_cache=None):
         """
         Returns the complete path (since the root) of the instance of Yang
         :param: -
         :return: string
         """
         if self._parent is not None:
-            return self._parent.get_path() + "/" + self.get_tag()
+            p = self._parent.get_path(path_cache=path_cache) + "/" + self.get_tag()
         else:
-            return "/" + self.get_tag()
+            p = "/" + self.get_tag()
+        if path_cache is not None:
+            path_cache[self] = p
+        return p
 
     def has_path(self, path, at=None):
         """
@@ -606,6 +658,54 @@ class Yang(object):
                 return p[at] == path
             return False
         return path in p
+
+    def create_from_path(self, path):
+        """
+        Create yang tree from path
+        :param path: string, path to create
+        :return: Yang, Yang object at the source instance's / path's path
+        """
+        if path == "":
+            return self
+        if type(path) in (list, tuple):
+            p = path
+        else:
+            p = PathUtils.path_to_list(path)
+        if len(p) < 1:
+            return self
+        if p[0] == "":  # absolute path
+            if self.get_parent() is not None:
+                return self.get_parent().create_from_path(p)
+            p.pop(0)
+            return self.create_from_path(p)
+        l = p.pop(0)
+        if l == "..":
+            return self.get_parent().create_from_path(p)
+        elif (l.find("[") > 0) and (l.find("]") > 0):
+            attrib = l[0: l.find("[")]
+            keystring = l[l.find("[") + 1: l.rfind("]")]
+            keys = dict(item.split("=") for item in keystring.split(","))
+            if self._tag == attrib:  # listed yang, with match
+                if  self.match_keys(**keys):
+                    return self.create_from_path(p)
+                else:
+                    raise ValueError("Fixme: key mismatch")
+            try:
+                return self.__dict__[attrib][keys].create_from_path(p)
+            except:
+                # key does not exist
+                _yang = self.__dict__[attrib]._type(**keys)
+                self.__dict__[attrib].add(_yang)
+                return self.__dict__[attrib][keys].create_from_path(p)
+        else:
+            try:
+                return self.__dict__[l].create_from_path(p)
+            except:
+                logger.exception("Fixme: how to create class object")
+                raise ValueError("Fixme: how to create class object")
+
+        raise ValueError("create_from_path: no conditions matched ")
+
 
     def create_path(self, source, path=None, target_copy_type=None):
         """
@@ -1006,6 +1106,43 @@ class Yang(object):
                         if not eq: return False
         return eq
 
+    def translate_and_merge(self, translator, destination, path_caches=None, execute=False):
+
+        # prepare caches if needed
+        if path_caches is None:
+            path_caches = dict()
+            path_caches['dst'] = dict()
+            path_caches['src'] = dict()
+
+        return self.__translate_and_merge__(translator, destination, path_caches=path_caches, execute=execute)
+
+
+    def __translate_and_merge__(self, translator, destination, path_caches=None, execute=False):
+        """
+        Common recursive functionaltify for merge() and patch() methods with TRANSLATION. Execute defines if operation is copied or executed.
+        :param destination: instance of Yang
+        :param execute: True - operation is executed; False - operation is copied
+        :return: yang: destination object
+        """
+
+        dst_path = translator.get_target_path(self.get_path(path_caches['src']))
+        dst = destination.create_from_path(dst_path)
+        if execute and self.has_operation(('delete', 'remove')):
+            if isinstance(dst, Leaf):
+                dst.clear_data()
+            else:
+                dst.delete()
+            return dst
+
+        if not self.is_initialized():
+            return dst
+
+        for k in self._sorted_children:
+            if dst.__dict__[k] is None:
+                dst.create_from_path(k)
+            self.__dict__[k].__translate_and_merge__(translator, dst.__dict__[k], path_caches=path_caches)
+        return dst
+
     def __merge__(self, source, execute=False):
         """
         Common recursive functionaltify for merge() and patch() methods. Execute defines if operation is copied or executed.
@@ -1132,6 +1269,25 @@ class Yang(object):
                     self.__dict__[c].bind(relative=relative, reference=reference)
         return
 
+    def _convert_leafrefs_to(self, relative=False, recursive=True):
+        """
+        Convert Leafref to relative/absolute paths
+        :param relative: True or False
+        :param recursive: True - for all the sub-tree; False - local object only
+        :return: -
+        """
+        if (len(self._sorted_children) > 0) and (recursive):
+            for c in self._sorted_children:
+                if self.__dict__[c] is not None:
+                    self.__dict__[c]._convert_leafrefs_to(relative=relative, recursive=recursive)
+        return
+
+    def convert_leafrefs_to_absolute_path(self, recursive=True):
+        return self._convert_leafrefs_to(relative=False, recursive=recursive)
+
+    def convert_leafrefs_to_relative_path(self, recursive=True):
+        return self._convert_leafrefs_to(relative=True, recursive=recursive)
+
     def _parse(self, parent, root):
         """
         Abstract method to create classes from XML string
@@ -1189,6 +1345,15 @@ class Leaf(Yang):
         """:type: boolean"""
         self.units = ""
         """:type: string"""
+
+    def __translate_and_merge__(self, translator, destination, path_caches=None, execute=False):
+        """
+        Common recursive functionaltify for merge() and patch() methods with TRANSLATION. Execute defines if operation is copied or executed.
+        :param source: instance of Yang
+        :param execute: True - operation is executed; False - operation is copied
+        :return: -
+        """
+        destination.set_value(self.get_value())
 
     def get_value(self):
         """
@@ -1543,6 +1708,7 @@ class IntLeaf(Leaf):
         return False
 
 
+
 class Decimal64Leaf(Leaf):
     """
     Class defining Leaf with decimal extensions (e.g., dec_range)
@@ -1678,6 +1844,17 @@ class Leafref(StringLeaf):
         # super call calls set_value()
         super(Leafref, self).__init__(tag, parent=parent, value=value, mandatory=mandatory)
 
+    def __translate_and_merge__(self, translator, destination, path_caches=None, execute=False):
+        """
+        Common recursive functionaltify for merge() and patch() methods with TRANSLATION. Execute defines if operation is copied or executed.
+        :param destination: instance of Yang
+        :param execute: True - operation is executed; False - operation is copied
+        :return: -
+        """
+        # let's call ancestor's copy function first
+        super(Leafref, self).__translate_and_merge__(translator, destination, path_caches=path_caches, execute=execute)
+        translator.translate_leafref(destination)
+
     def set_value(self, value):
         """
         Sets data value as either a path or a Yang object
@@ -1739,6 +1916,26 @@ class Leafref(StringLeaf):
         if self.target is None:
             return self.walk_path(self.data, reference=reference)
         return self.target
+
+    def _convert_leafrefs_to(self, relative=False, recursive=True):
+        """
+        Convert Leafref to relative/absolute paths
+        :param relative: True or False
+        :param recursive: True - for all the sub-tree; False - local object only
+        :return: -
+        """
+        if relative:
+            if self.target is not None:
+                self.data = PathUtils.diff(self.get_path(), self.target.get_path())
+            else:
+                self.data = PathUtils.diff(self.get_path(), self.data)
+        else:
+            if self.target is not None:
+                self.data = self.target.get_path()
+                return
+            self.data = PathUtils.add(self.get_path(), self.data)
+        return
+
 
     def get_absolute_path_to_target(self, strip=0):
         """
@@ -1883,6 +2080,33 @@ class ListedYang(Yang):
         super(ListedYang, self).__init__(tag, parent)
         self._key_attributes = keys
 
+    def __translate_and_merge__(self, translator, destination, path_caches=None, execute=False):
+        """
+        Common recursive functionaltify for merge() and patch() methods with TRANSLATION. Execute defines if operation is copied or executed.
+        :param destination: instance of Yang
+        :param execute: True - operation is executed; False - operation is copied
+        :return: -
+        """
+
+        dst_path = translator.get_target_path(self.get_path(path_caches['src']))
+        dst = destination.create_from_path(dst_path)
+        if execute and self.has_operation(('delete', 'remove')):
+            if isinstance(dst, Leaf):
+                dst.clear_data()
+            else:
+                dst.delete()
+            return
+
+        if not self.is_initialized():
+            return
+
+        for k in self._sorted_children:
+            if k not in dst._key_attributes:
+                if dst.__dict__[k] is None:
+                    dst.create_from_path(k)
+                self.__dict__[k].__translate_and_merge__(translator, dst.__dict__[k], path_caches=path_caches)
+        pass
+
     def is_initialized(self, ignore_key=False):
         """
         Check if any of the attributes of instance are initialized, returns True if yes
@@ -1927,6 +2151,20 @@ class ListedYang(Yang):
             return tuple(keys)
         return self.__dict__[self._key_attributes[0]].get_value()
 
+    def match_keys(self, **kwargs):
+        """
+        Check if item has the key
+        :param kwargs:
+        :return:
+        """
+        res = True
+        for k in self._key_attributes:
+            if k in kwargs.keys():
+                res = res and (self.__dict__[k] == kwargs[k])
+            else:
+                return False
+        return res
+
     def get_key_tags(self):
         """
         Abstract method to get tags of class that inherit ListedYang
@@ -1938,12 +2176,17 @@ class ListedYang(Yang):
             return tuple(tags)
         return self.__dict__[self._key_attributes[0]].get_tag()
 
-    def get_path(self):
+    def get_path(self, path_cache=None):
         """
         Returns path of ListedYang based on tags and values of its components
-        :param: -
+        :param: path_cache: dictionary of yang object paths
         :return: string
         """
+        try:
+            return path_cache[self]  # if object is already in the cache
+        except:
+            pass
+
         key_values = self.keys()
         if key_values is None:
             raise KeyError("List entry without key value: " + self.get_as_text())
@@ -1954,9 +2197,15 @@ class ListedYang(Yang):
             s = key_tags + "=" + key_values
 
         if self._parent is not None:
-            return self._parent.get_path() + "/" + self.get_tag() + "[" + s + "]"
+            try:
+                p = path_cache[self._parent] + "/" + self.get_tag() + "[" + s + "]"
+            except:
+                p = self._parent.get_path(path_cache=path_cache) + "/" + self.get_tag() + "[" + s + "]"
         else:
-            return "/" + self.get_tag() + "[" + s + "]"
+            p = "/" + self.get_tag() + "[" + s + "]"
+        if path_cache is not None:
+            path_cache[self] = p
+        return p
 
     def empty_copy(self):
         """
@@ -2087,6 +2336,18 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         super(ListYang, self).__init__(tag, parent)
         self._data = OrderedDict()
         self._type = type
+
+    def __translate_and_merge__(self, translator, destination, path_caches=None, execute=False):
+        """
+        Common recursive functionaltify for merge() and patch() methods with TRANSLATION. Execute defines if operation is copied or executed.
+        :param destination: instance of Yang
+        :param execute: True - operation is executed; False - operation is copied
+        :return: -
+        """
+
+        for k, v in self._data.items():
+            v.__translate_and_merge__(translator, destination, path_caches=path_caches)
+
 
     def get_next(self, children=None, operation=None, tags=None, _called_from_parent_=False):
         """
@@ -2250,16 +2511,20 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
             item = item.keys()
         return self._data.pop(item)
 
-    def get_path(self):
+    def get_path(self, path_cache=None):
         """
         Overides Yang method
         :param: -
         :return: upstream path
         """
         if self._parent is not None:
-            return self._parent.get_path()
-        # if no parent, let's assume root
-        return "/"
+            p = self._parent.get_path(path_cache=path_cache)
+        else:
+            # if no parent, let's assume root
+            p = "/"
+        if path_cache is not None:
+            path_cache[self] = p
+        return p
 
 
     def _et(self, node, inherited=False, ordered=True):
@@ -2307,6 +2572,12 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         """
         if type(key) is list:
             key = tuple(key)
+        if type(key) is dict:
+            key = key.values()
+            if len(key) == 1:
+                key = key[0]
+            else:
+                key = tuple(key)
         if key in self._data.keys():
             return self._data[key]
         else:
@@ -2439,6 +2710,16 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
     def bind(self, relative=False, reference=None):
         for v in self.values():
             v.bind(relative=relative, reference=reference)
+
+    def _convert_leafrefs_to(self, relative=False, recursive=True):
+        """
+        Convert Leafref to relative/absolute paths
+        :param relative: True or False
+        :param recursive: True - for all the sub-tree; False - local object only
+        :return: -
+        """
+        for v in self.values():
+            v._convert_leafrefs_to(relative=relative, recursive=recursive)
 
     def has_attrs_with_values(self, av_list, ignore_case=True):
         try:
