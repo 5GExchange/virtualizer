@@ -3,7 +3,6 @@ __author__ = 'ekosrec'
 import virtualizer
 import copy
 
-
 def combine(self, source):
     old_self = copy.deepcopy(self)
     self.merge(source)
@@ -12,13 +11,15 @@ def combine(self, source):
     for infra1 in old_self.nodes.node:
         for port in old_self.nodes[infra1].ports.port:
             if old_self.nodes[infra1].ports[port].port_type.get_as_text() == 'port-sap':
-                virt1_saps[old_self.nodes[infra1].ports[port].sap.get_as_text()]=(infra1, port)
+                if old_self.nodes[infra1].ports[port].sap.is_initialized():
+                    virt1_saps[old_self.nodes[infra1].ports[port].sap.get_as_text()]=(infra1, port)
 
     virt2_saps = {}
     for infra2 in source.nodes.node:
         for port in source.nodes[infra2].ports.port:
             if source.nodes[infra2].ports[port].port_type.get_as_text() == 'port-sap':
-                virt2_saps[source.nodes[infra2].ports[port].sap.get_as_text()]=(infra2, port)
+                if source.nodes[infra2].ports[port].sap.is_initialized():
+                    virt2_saps[source.nodes[infra2].ports[port].sap.get_as_text()] = (infra2, port)
 
 
     pairs = {virt1_saps[k]: virt2_saps[k] for k in virt1_saps.keys() if k in virt2_saps.keys()}
