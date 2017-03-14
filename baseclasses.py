@@ -1925,6 +1925,8 @@ class Leafref(StringLeaf):
         :param recursive: True - for all the sub-tree; False - local object only
         :return: -
         """
+        if (self.target is None) and (self.data is None):  # operation delete
+            return
         if relative:
             if self.target is not None:
                 self.data = PathUtils.diff(self.get_path(), self.target.get_path())
