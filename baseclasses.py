@@ -1118,6 +1118,29 @@ class Yang(object):
         return self.__translate_and_merge__(translator, destination, path_caches=path_caches, execute=execute)
 
 
+    def translate(self, translator, destination, path_caches=None):
+        """
+        Common recursive functionaltify for merge() and patch() methods with TRANSLATION. Execute defines if operation is copied or executed.
+        :param destination: instance of Yang
+        :param execute: True - operation is executed; False - operation is copied
+        :return: yang: destination object
+        """
+        # prepare caches if needed
+        if path_caches is None:
+            path_caches = dict()
+            path_caches['dst'] = dict()
+            path_caches['src'] = dict()
+
+        dst_path = translator.get_target_path(self.get_path(path_caches['src']))
+        tmp = destination.empty_copy()
+        dst = tmp.create_from_path(dst_path)
+
+        for k in self._sorted_children:
+            if dst.__dict__[k] is None:
+                dst.create_from_path(k)
+            self.__dict__[k].__translate_and_merge__(translator, dst.__dict__[k], path_caches=path_caches)
+        return dst
+
     def __translate_and_merge__(self, translator, destination, path_caches=None, execute=False):
         """
         Common recursive functionaltify for merge() and patch() methods with TRANSLATION. Execute defines if operation is copied or executed.
