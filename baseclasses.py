@@ -1136,9 +1136,12 @@ class Yang(object):
         dst = tmp.create_from_path(dst_path)
 
         for k in self._sorted_children:
-            if dst.__dict__[k] is None:
-                dst.create_from_path(k)
-            self.__dict__[k].__translate_and_merge__(translator, dst.__dict__[k], path_caches=path_caches)
+            if hasattr(self, '_key_attributes') and (k in self._key_attributes):
+                pass
+            else:
+                if dst.__dict__[k] is None:
+                    dst.create_from_path(k)
+                self.__dict__[k].__translate_and_merge__(translator, dst.__dict__[k], path_caches=path_caches)
         return dst
 
     def __translate_and_merge__(self, translator, destination, path_caches=None, execute=False):
@@ -2607,7 +2610,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         if key in self._data.keys():
             return self._data[key]
         else:
-            raise KeyError("key not existing")
+            raise KeyError("key does not exist: {key} at: {item}".format(key=str(key), item=str(self)))
 
     def __setitem__(self, key, value):
         """
