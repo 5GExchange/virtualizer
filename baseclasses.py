@@ -48,8 +48,9 @@ __EDIT_OPERATION_TYPE_ENUMERATION__ = (  # see https://tools.ietf.org/html/rfc62
 
 DEFAULT = object()
 
-__IGNORED_ATTRIBUTES__ = ("_parent", "_tag", "_sorted_children", "_referred", "_key_attributes", "version", "_sh")
+__IGNORED_ATTRIBUTES__ =    ("_parent", "_tag", "_sorted_children", "_referred", "_key_attributes", "version", "_sh")
 __EQ_IGNORED_ATTRIBUTES__ = ("_parent", "_sorted_children", "_referred", "_key_attributes", "version")
+__YANG_COPY_ATTRIBUTES__ =  ("_tag", "_sorted_children", "_operation", "_attributes", "_leaf_attributes")
 
 __REDUCE_ATTRIBUTES__ = ("")
 
@@ -264,6 +265,7 @@ class Yang(object):
         self._referred = []  # to hold leafref references for backward search
         self._sorted_children = []  # to hold children Yang list
         self._attributes = ['_operation']
+        self._leaf_attributes = list()
 
     def __setattr__(self, key, value):
         """
@@ -1135,6 +1137,8 @@ class Yang(object):
         tmp = destination.empty_copy()
         dst = tmp.create_from_path(dst_path)
 
+        dst.set_operation(self.get_operation(), recursive=False)  # copy operation over
+
         for k in self._sorted_children:
             if hasattr(self, '_key_attributes') and (k in self._key_attributes):
                 pass
@@ -1160,6 +1164,8 @@ class Yang(object):
             else:
                 dst.delete()
             return dst
+
+        dst.set_operation(self.get_operation(), recursive=False)  # copy operation over
 
         if not self.is_initialized():
             return dst
@@ -1247,6 +1253,32 @@ class Yang(object):
         :return: instance copy (of Yang)
         """
         return copy.deepcopy(self)
+
+    def full_copy_subtree(self):
+        """
+        Performs deepcopy of instance of Yang
+        :param: -
+        :return: instance copy (of Yang)
+        """
+        # let's save the parent
+        _parent = self._parent
+        self._parent = None  # to avoid upstream copying
+        _subtree = copy.deepcopy(self)
+        self._parent = _parent
+        return _subtree
+
+    def yang_copy(self, parent=None):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        result._parent = parent
+        for k in self._sorted_children:
+            setattr(result, k, self.__dict__[k].yang_copy(result))
+        for k in __YANG_COPY_ATTRIBUTES__:
+            setattr(result, k, copy.deepcopy(self.__dict__[k]))
+        for k in self._leaf_attributes:
+            setattr(result, k, copy.deepcopy(self.__dict__[k]))
+        return result
+
 
     def delete(self):  # FIXME: if referred by a LeafRef?
         """
@@ -1372,6 +1404,7 @@ class Leaf(Yang):
         """:type: boolean"""
         self.units = ""
         """:type: string"""
+        self._leaf_attributes.extend(['data', 'mandatory'])
 
     def __translate_and_merge__(self, translator, destination, path_caches=None, execute=False):
         """
@@ -1555,6 +1588,9 @@ class Leaf(Yang):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+
+
+
 class StringLeaf(Leaf):
     """
     Class defining Leaf with string extensions
@@ -1569,6 +1605,7 @@ class StringLeaf(Leaf):
         """:type: string"""
         self.set_mandatory(mandatory)  # FIXME: Mandatory should be handled in the Leaf class!
         """:type: boolean"""
+        self._leaf_attributes.extend(['units'])
 
     def parse(self, root):
         """
@@ -1870,6 +1907,7 @@ class Leafref(StringLeaf):
         """:type: Yang"""
         # super call calls set_value()
         super(Leafref, self).__init__(tag, parent=parent, value=value, mandatory=mandatory)
+        self._leaf_attributes.append('target')
 
     def __translate_and_merge__(self, translator, destination, path_caches=None, execute=False):
         """
@@ -2109,6 +2147,17 @@ class ListedYang(Yang):
         super(ListedYang, self).__init__(tag, parent)
         self._key_attributes = keys
 
+    def yang_copy(self, parent=None):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        result._parent = parent
+        for k in self._sorted_children:
+            setattr(result, k, self.__dict__[k].yang_copy(result))
+        for k in __YANG_COPY_ATTRIBUTES__:
+            setattr(result, k, copy.deepcopy(self.__dict__[k]))
+        result._key_attributes = copy.deepcopy(self._key_attributes)
+        return result
+
     def __translate_and_merge__(self, translator, destination, path_caches=None, execute=False):
         """
         Common recursive functionaltify for merge() and patch() methods with TRANSLATION. Execute defines if operation is copied or executed.
@@ -2125,6 +2174,8 @@ class ListedYang(Yang):
             else:
                 dst.delete()
             return
+
+        dst.set_operation(self.get_operation(), recursive=False)  # copy operation over
 
         if not self.is_initialized():
             return
@@ -2365,6 +2416,16 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         super(ListYang, self).__init__(tag, parent)
         self._data = OrderedDict()
         self._type = type
+
+    def yang_copy(self, parent=None):
+        cls = self.__class__
+        result = cls(self._tag, parent=parent, type=self._type)
+        for k, v in self._data.items():
+            result._data[k] = v.yang_copy(result)
+        for k in __YANG_COPY_ATTRIBUTES__:
+            setattr(result, k, copy.deepcopy(self.__dict__[k]))
+        return result
+
 
     def __translate_and_merge__(self, translator, destination, path_caches=None, execute=False):
         """
