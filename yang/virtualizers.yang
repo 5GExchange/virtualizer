@@ -17,10 +17,16 @@ module virtualizers {
 	type string;
 	mandatory true;
       }
+    leaf srcdomain {
+      type string;
+      }
       leaf src {
 	type leafref {
 	  path "";
 	}
+      }
+    leaf dstdomain {
+      type string;
       }
       leaf dst {
 	type leafref {
