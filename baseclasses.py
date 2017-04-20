@@ -768,6 +768,9 @@ class Yang(object):
         :param path: string
         :return: attribute instance of Yang
         """
+        if type(path) is Leafref:
+            return self.walk_path(path.data)
+
         if path == "":
             return self
 
