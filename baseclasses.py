@@ -2180,14 +2180,14 @@ class ListedYang(Yang):
         dst.set_operation(self.get_operation(), recursive=False)  # copy operation over
 
         if not self.is_initialized():
-            return
+            return dst
 
         for k in self._sorted_children:
             if k not in dst._key_attributes:
                 if dst.__dict__[k] is None:
                     dst.create_from_path(k)
                 self.__dict__[k].__translate_and_merge__(translator, dst.__dict__[k], path_caches=path_caches)
-        pass
+        return dst
 
     def is_initialized(self, ignore_key=False):
         """
