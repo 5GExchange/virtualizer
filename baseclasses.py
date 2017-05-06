@@ -1167,15 +1167,16 @@ class Yang(object):
                 dst.delete()
             return dst
 
-        dst.set_operation(self.get_operation(), recursive=False)  # copy operation over
-
         if not self.is_initialized():
             return dst
 
         for k in self._sorted_children:
             if dst.__dict__[k] is None:
                 dst.create_from_path(k)
-            self.__dict__[k].__translate_and_merge__(translator, dst.__dict__[k], path_caches=path_caches)
+            self.__dict__[k].__translate_and_merge__(translator, dst.__dict__[k], path_caches=path_caches, execute=execute)
+
+        if execute:
+            dst.set_operation(None, recursive=False)
         return dst
 
     def __merge__(self, source, execute=False):
@@ -1415,7 +1416,14 @@ class Leaf(Yang):
         :param execute: True - operation is executed; False - operation is copied
         :return: -
         """
-        destination.set_value(self.get_value())
+
+        if execute and self.has_operation(('delete', 'remove')):
+            destination.clear_data()
+        else:
+            destination.set_value(self.get_value())
+            if execute:
+                destination.set_operation(None, recursive=False)
+
 
     def get_value(self):
         """
@@ -2177,8 +2185,6 @@ class ListedYang(Yang):
                 dst.delete()
             return
 
-        dst.set_operation(self.get_operation(), recursive=False)  # copy operation over
-
         if not self.is_initialized():
             return dst
 
@@ -2186,7 +2192,11 @@ class ListedYang(Yang):
             if k not in dst._key_attributes:
                 if dst.__dict__[k] is None:
                     dst.create_from_path(k)
-                self.__dict__[k].__translate_and_merge__(translator, dst.__dict__[k], path_caches=path_caches)
+                self.__dict__[k].__translate_and_merge__(translator, dst.__dict__[k], path_caches=path_caches, execute=execute)
+
+        if execute:
+            dst.set_operation(None, recursive=False)
+
         return dst
 
     def is_initialized(self, ignore_key=False):
@@ -2438,7 +2448,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         """
 
         for k, v in self._data.items():
-            v.__translate_and_merge__(translator, destination, path_caches=path_caches)
+            v.__translate_and_merge__(translator, destination, path_caches=path_caches, execute=execute)
 
 
     def get_next(self, children=None, operation=None, tags=None, _called_from_parent_=False):
