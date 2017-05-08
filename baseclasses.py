@@ -34,6 +34,7 @@ import sys
 import string
 import logging
 import json
+import re
 
 logger = logging.getLogger("baseclasses")
 
@@ -68,10 +69,13 @@ class PathUtils:
                 _p.pop(0)
             _list.extend(_p)
             _list[-1] += '[' + _mid + ']'
-        _p = _remaining.split('/')
-        if len(_list) > 0:
-            _p.pop(0)
-        _list.extend(_p)
+            if _remaining is None:
+                break
+        if _remaining is not None:
+            _p = _remaining.split('/')
+            if len(_list) > 0:
+                _p.pop(0)
+            _list.extend(_p)
         return _list
 
     @staticmethod
@@ -852,6 +856,7 @@ class Yang(object):
     @classmethod
     def parse_from_text(cls, text):
         try:
+            text = re.sub('virtualizer\[id=.*?\]','virtualizer', text)
             tree = ET.ElementTree(ET.fromstring(text))
             return cls.parse(root=tree.getroot())
         except ET.ParseError as e:
