@@ -34,6 +34,7 @@ import sys
 import string
 import logging
 import json
+import re
 
 logger = logging.getLogger("baseclasses")
 
@@ -67,10 +68,13 @@ class PathUtils:
                 _p.pop(0)
             _list.extend(_p)
             _list[-1] += '[' + _mid + ']'
-        _p = _remaining.split('/')
-        if len(_list) > 0:
-            _p.pop(0)
-        _list.extend(_p)
+            if _remaining is None:
+                break
+        if _remaining is not None:
+            _p = _remaining.split('/')
+            if len(_list) > 0:
+                _p.pop(0)
+            _list.extend(_p)
         return _list
 
     @staticmethod
@@ -867,6 +871,7 @@ class Yang(object):
     @classmethod
     def parse_from_text(cls, text):
         try:
+            text = re.sub('virtualizer\[id=.*?\]','virtualizer', text)
             tree = ET.ElementTree(ET.fromstring(text))
             return cls.parse(root=tree.getroot())
         except ET.ParseError as e:
@@ -1141,7 +1146,10 @@ class Yang(object):
         for k in self._sorted_children:
             if dst.__dict__[k] is None:
                 dst.create_from_path(k)
-            self.__dict__[k].__translate_and_merge__(translator, dst.__dict__[k], path_caches=path_caches)
+            self.__dict__[k].__translate_and_merge__(translator, dst.__dict__[k], path_caches=path_caches, execute=execute)
+
+        if execute:
+            dst.set_operation(None, recursive=False)
         return dst
 
     def __merge__(self, source, execute=False):
@@ -1354,7 +1362,14 @@ class Leaf(Yang):
         :param execute: True - operation is executed; False - operation is copied
         :return: -
         """
-        destination.set_value(self.get_value())
+
+        if execute and self.has_operation(('delete', 'remove')):
+            destination.clear_data()
+        else:
+            destination.set_value(self.get_value())
+            if execute:
+                destination.set_operation(None, recursive=False)
+
 
     def get_value(self):
         """
@@ -2107,7 +2122,10 @@ class ListedYang(Yang):
             if k not in dst._key_attributes:
                 if dst.__dict__[k] is None:
                     dst.create_from_path(k)
-                self.__dict__[k].__translate_and_merge__(translator, dst.__dict__[k], path_caches=path_caches)
+                self.__dict__[k].__translate_and_merge__(translator, dst.__dict__[k], path_caches=path_caches, execute=execute)
+
+        if execute:
+            dst.set_operation(None, recursive=False)
         pass
 
     def is_initialized(self, ignore_key=False):
@@ -2349,7 +2367,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         """
 
         for k, v in self._data.items():
-            v.__translate_and_merge__(translator, destination, path_caches=path_caches)
+            v.__translate_and_merge__(translator, destination, path_caches=path_caches, execute=execute)
 
 
     def get_next(self, children=None, operation=None, tags=None, _called_from_parent_=False):
