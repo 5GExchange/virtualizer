@@ -552,30 +552,11 @@ class Yang(object):
                         _reduce = False
                 else:
                     _reduce = False
-        _reduce &= self.has_operation(reference.get_operation())
-        return _reduce
-
-        for k, v in self.__dict__.items():
-            # if hasattr(v, "mandatory") and v.get_mandatory() is True:
-            #     _ignores.append(k)
-            if type(self._parent) is ListYang:  # todo: move this outside
-                if k == self.keys():
-                    _ignores.append(k)
-            if k not in _ignores:
-                if isinstance(v, Yang):
-                    if k in reference.__dict__.keys():
-                        if type(v) == type(reference.__dict__[k]):
-                            if v.reduce(reference.__dict__[k]):
-                                v.clear_data()
-                            else:
-                                # v.set_operation("replace", recursive=False, force=False)
-                                _reduce = False
-                    else:
-                        v.set_operation("create", recursive=False, force=False)
-                        _reduce = False
-                elif (v is not None) and (v != reference.__dict__[k]):  # to handle _operation, etc.
-                    _reduce = False
-        # self.set_operation("merge", recursive=False, force=False)
+        if self.has_operation(reference.get_operation()):
+            self.set_operation(None, recursive=None, force=True)
+        else:
+            _reduce = False
+        # _reduce &= self.has_operation(reference.get_operation())
         return _reduce
 
     def _diff(self, source, ignores=None):
@@ -1024,6 +1005,9 @@ class Yang(object):
         :param execute: boolean, determines if delete operations must be carried out (True) or just marked (False)
         :return: -
         """
+        if issubclass(type(operation), Yang):
+            operation = operation._operation
+
         if operation not in ((None,) + __EDIT_OPERATION_TYPE_ENUMERATION__):
             raise ValueError("Illegal operation value: operation={operation} at {yang}".format(operation=operation,
                                                                                                yang=self.get_as_text()))
@@ -1177,6 +1161,8 @@ class Yang(object):
 
         if execute:
             dst.set_operation(None, recursive=False)
+        else:
+            dst.set_operation(self)
         return dst
 
     def __merge__(self, source, execute=False):
@@ -1423,6 +1409,8 @@ class Leaf(Yang):
             destination.set_value(self.get_value())
             if execute:
                 destination.set_operation(None, recursive=False)
+            else:
+                destination.set_operation(self)
 
 
     def get_value(self):
@@ -2196,6 +2184,8 @@ class ListedYang(Yang):
 
         if execute:
             dst.set_operation(None, recursive=False)
+        else:
+            dst.set_operation(self)
 
         return dst
 
@@ -2726,7 +2716,8 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
                     # self[key].set_operation("replace", recursive=False, force=False)
                     _reduce = False
             else:
-                self[key].set_operation("create", recursive=False, force=False)
+                self[key].set_operation(None, recursive=True, force=True)
+                self[key].set_operation("create", recursive=False, force=True)
                 _reduce = False
         return _reduce
 
