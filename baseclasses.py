@@ -34,7 +34,6 @@ import sys
 import string
 import logging
 import json
-import re
 
 logger = logging.getLogger("baseclasses")
 
@@ -871,7 +870,6 @@ class Yang(object):
     @classmethod
     def parse_from_text(cls, text):
         try:
-            text = re.sub('virtualizer\[id=.*?\]','virtualizer', text)
             tree = ET.ElementTree(ET.fromstring(text))
             return cls.parse(root=tree.getroot())
         except ET.ParseError as e:
@@ -2006,12 +2004,6 @@ class Leafref(StringLeaf):
                 pass
             raise ValueError("{target} from {obj} is not available in \n{virt}".format(target=self.data,obj=self.get_path(),virt=src.html()))
 
-
-
-
-
-
-
     def bind(self, relative=True, reference=None):
         """
         Binds the target and add the referee to the referende list in the target. The path is updated to relative or absolut based on the parameter
@@ -2027,21 +2019,24 @@ class Leafref(StringLeaf):
         elif self.data is not None:
             if self._parent is not None:
                 try:
-                    self.target = self.walk_path(self.data)
+                    if not '://' in self.data:
+                        self.target = self.walk_path(self.data)
                 except (ValueError):
                     if reference is not None:
                         self.create_path(source=reference, path=self.data, target_copy_type='full')
                         self.target = self.walk_path(self.data)
                     else:
                         raise
-                self.target.set_referred(self)
-                if ((self.data[0] == "/") and (relative is True)) or ((self.data[0] != "/") and (relative is False)):
-                    self.bind(relative=relative)
-
+                if self.target is not None:
+                    self.target.set_referred(self)
+                if not '://' in self.data:
+                    if ((self.data[0] == "/") and (relative is True)) or ((self.data[0] != "/") and (relative is False)):
+                        self.bind(relative=relative)
 
     def unbind(self):
         if self.target is not None:
             self.target.unset_referred(self)
+            self.target = None
 
     def clear_data(self):
         """

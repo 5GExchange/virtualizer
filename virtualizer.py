@@ -30,7 +30,7 @@ __version__ = "2016-07-08"
 
 
 from baseclasses import *
-
+import re
 
 # YANG construct: grouping id-name
 class GroupingId_name(Yang):
@@ -693,3 +693,7 @@ class Virtualizer(GroupingVirtualizer):
         GroupingVirtualizer.__init__(self, tag, parent, id, name, nodes, links, version)
         self._sorted_children = ["id", "name", "nodes", "links", "metadata", "version"]
 
+    @classmethod
+    def parse_from_text(cls, text):
+        text = re.sub('virtualizer\[id=.*?\]','virtualizer', text)   # quick compatibility fix for the ListedYang based virtualizer
+        return super(Virtualizer, cls).parse_from_text(text)
