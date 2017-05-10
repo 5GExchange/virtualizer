@@ -669,6 +669,8 @@ class Yang(object):
         l = p.pop(0)
         if l == "..":
             return self.get_parent().create_from_path(p)
+        elif l == self._tag:
+            return self.create_from_path(p)
         elif (l.find("[") > 0) and (l.find("]") > 0):
             attrib = l[0: l.find("[")]
             keystring = l[l.find("[") + 1: l.rfind("]")]
@@ -856,7 +858,6 @@ class Yang(object):
     @classmethod
     def parse_from_text(cls, text):
         try:
-            text = re.sub('virtualizer\[id=.*?\]','virtualizer', text)
             tree = ET.ElementTree(ET.fromstring(text))
             return cls.parse(root=tree.getroot())
         except ET.ParseError as e:
@@ -1407,6 +1408,10 @@ class Leaf(Yang):
         :param execute: True - operation is executed; False - operation is copied
         :return: -
         """
+
+        if type(self) != type(destination):
+            dst_path = translator.get_target_path(self.get_path(path_caches['src']))
+            destination = destination.create_from_path(dst_path)
 
         if execute and self.has_operation(('delete', 'remove')):
             destination.clear_data()
