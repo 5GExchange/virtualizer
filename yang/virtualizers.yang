@@ -35,6 +35,41 @@ module virtualizers {
       }
     }
   }
+
+  grouping mirror {
+    list mirror {
+      key "id";
+      leaf id {
+	type string;
+	mandatory true;
+      }
+      leaf srcdomain {
+	type string;
+      }
+      leaf filter {
+	type string {
+	}
+      }
+      leaf attrib {
+	type leafref {
+	  path "";
+	}
+      }
+      leaf value {
+	type string {
+	}
+      }
+      leaf dstdomain {
+	type string;
+      }
+      leaf dst {
+	type leafref {
+	  path "";
+	}
+      }
+    }
+  }
+
   
   container virtualizers {
     description "Container for a list of virtualizers";
@@ -43,5 +78,6 @@ module virtualizers {
       uses v:virtualizer;
     }
     uses bind;
+    uses mirror;
   }
 }
