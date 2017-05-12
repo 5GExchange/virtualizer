@@ -116,13 +116,13 @@ class PathUtils:
     @staticmethod
     def match_path_regexp(path, path_regexp):
         p = PathUtils.path_to_list(path)
-        filter = PathUtils.path_to_list(path_regexp)
+        _filter = PathUtils.path_to_list(path_regexp)
         try:
-            while re.match(filter[0], p[0]) is not None:
+            while re.match(_filter[0], p[0]) is not None:
                 p.pop(0)
-                filter.pop(0)
+                _filter.pop(0)
         finally:
-            if len(filter)>0:
+            if len(_filter)>0:
                 return None
 
 
@@ -306,7 +306,7 @@ class Yang(object):
             return self._tag in tags
         return self._tag == tags
 
-    def filter(self, filter, reference=None):
+    def path_filter(self, path_filter, reference=None):
         def check_attrib(base, offset, attrib_path, value):
             try:
                 a = base.walk_path(offset)
@@ -317,24 +317,24 @@ class Yang(object):
             except:
                 return False
 
-        if filter is None:
+        if path_filter is None:
             return True  # empty filter matches everything
         path = self.get_path()
-        m = re.match(filter['path'], path)
+        m = re.match(path_filter['path'], path)
         if m is not None:
-            a_path = filter.get('attrib', None)
+            a_path = path_filter.get('attrib', None)
             if a_path is not None:
-                if check_attrib(self, m.group(0), a_path, filter.get('value', None)):
+                if check_attrib(self, m.group(0), a_path, path_filter.get('value', None)):
                     return True
                 if reference is not None:
-                    return check_attrib(reference, m.group(0), a_path, filter.get('value', None))
+                    return check_attrib(reference, m.group(0), a_path, path_filter.get('value', None))
                 return False
             return True
         else:
             return False
 
 
-    def get_next(self, children=None, operation=None, tags=None, _called_from_parent_=False, reference= None, filter=None):
+    def get_next(self, children=None, operation=None, tags=None, _called_from_parent_=False, reference= None, path_filter=None):
         """
         Returns the next Yang element followed by the one called for. It can be used for in-depth traversar of the yang tree.
         :param children: Yang (for up level call to hand over the callee children)
@@ -349,10 +349,10 @@ class Yang(object):
                 while i < len(self._sorted_children):
                     if (self.__dict__[self._sorted_children[i]] is not None) and \
                             (self.__dict__[self._sorted_children[i]].is_initialized()):
-                        if self.__dict__[self._sorted_children[i]].has_operation(operation) and self.__dict__[self._sorted_children[i]].match_tags(tags) and self.__dict__[self._sorted_children[i]].filter(filter, reference=reference):
+                        if self.__dict__[self._sorted_children[i]].has_operation(operation) and self.__dict__[self._sorted_children[i]].match_tags(tags) and self.__dict__[self._sorted_children[i]].path_filter(path_filter, reference=reference):
                             return self.__dict__[self._sorted_children[i]]
                         else:
-                            res = self.__dict__[self._sorted_children[i]].get_next(operation=operation, tags=tags, _called_from_parent_=True, reference=reference, filter=filter)
+                            res = self.__dict__[self._sorted_children[i]].get_next(operation=operation, tags=tags, _called_from_parent_=True, reference=reference, path_filter=path_filter)
                             if res is not None:
                                 return res
                     i += 1
@@ -364,16 +364,16 @@ class Yang(object):
                 while i < len(self._sorted_children):
                     if (self.__dict__[self._sorted_children[i]] is not None) and \
                             (self.__dict__[self._sorted_children[i]].is_initialized()):
-                        if self.__dict__[self._sorted_children[i]].has_operation(operation) and self.__dict__[self._sorted_children[i]].match_tags(tags) and self.__dict__[self._sorted_children[i]].filter(filter, reference=reference):
+                        if self.__dict__[self._sorted_children[i]].has_operation(operation) and self.__dict__[self._sorted_children[i]].match_tags(tags) and self.__dict__[self._sorted_children[i]].path_filter(path_filter, reference=reference):
                             return self.__dict__[self._sorted_children[i]]
                         else:
-                            res = self.__dict__[self._sorted_children[i]].get_next(operation=operation, tags=tags, _called_from_parent_=True, reference=reference, filter=filter)
+                            res = self.__dict__[self._sorted_children[i]].get_next(operation=operation, tags=tags, _called_from_parent_=True, reference=reference, path_filter=path_filter)
                             if res is not None:
                                 return res
                     i += 1
         # go to parent
         if (self._parent is not None) and (not _called_from_parent_):
-            return self._parent.get_next(self, operation=operation, tags=tags, reference=reference, filter=filter)
+            return self._parent.get_next(self, operation=operation, tags=tags, reference=reference, path_filter=path_filter)
         return None
 
     def get_attr(self, attrib, v=None, default=DEFAULT):
@@ -2390,7 +2390,7 @@ class LeafListYang(Yang):
 
     pass
 
-    def get_next(self, children=None, operation=None, tags=None, _called_from_parent_=False, reference=None, filter=None):
+    def get_next(self, children=None, operation=None, tags=None, _called_from_parent_=False, reference=None, path_filter=None):
         """
         Overrides Yang method. Returns the next Yang element followed by the one called for. It can be used for in-depth traversar of the yang tree.
         :param children: Yang (for up level call to hand over the callee children)
@@ -2401,18 +2401,18 @@ class LeafListYang(Yang):
         if children is None:
             # return first key
             for key in self._data:
-                if self._data[key].has_operation(operation) and self._data[key].match_tags(tags) and self._data[key].filter(filter, reference=reference):
+                if self._data[key].has_operation(operation) and self._data[key].match_tags(tags) and self._data[key].path_filter(path_filter, reference=reference):
                     return self._data[key]
         else:
             # pretty tricky internal dic access, see http://stackoverflow.com/questions/12328184/how-to-get-the-next-item-in-an-ordereddict
             next = self._data._OrderedDict__map[children.keys()][1]
             while not (next is self._data._OrderedDict__root):
-                if self._data[next[2]].has_operation(operation) and self._data[next[2]].match_tags(tags) and self._data[next[2]].filter(filter, reference=reference):
+                if self._data[next[2]].has_operation(operation) and self._data[next[2]].match_tags(tags) and self._data[next[2]].path_filter(path_filter, reference=reference):
                     return self._data[next[2]]
 
         # go to parent
         if (self._parent is not None) and (not _called_from_parent_):
-            return self._parent.get_next(self, operation=operation, tags=tags, reference=reference, filter=filter)
+            return self._parent.get_next(self, operation=operation, tags=tags, reference=reference, path_filter=path_filter)
         return None
 
     def add(self, item):
@@ -2494,7 +2494,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
             v.__translate_and_merge__(translator, destination, path_caches=path_caches, execute=execute)
 
 
-    def get_next(self, children=None, operation=None, tags=None, _called_from_parent_=False, reference=None, filter=None):
+    def get_next(self, children=None, operation=None, tags=None, _called_from_parent_=False, reference=None, path_filter=None):
         """
         Overrides Yang method. Returns the next Yang element followed by the one called for. It can be used for in-depth traversar of the yang tree.
         :param children: Yang (for up level call to hand over the callee children)
@@ -2505,20 +2505,20 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         if children is None:
             # return first key
             for key in self._data:
-                if self._data[key].has_operation(operation) and self._data[key].match_tags(tags) and self._data[key].filter(filter, reference=reference):
+                if self._data[key].has_operation(operation) and self._data[key].match_tags(tags) and self._data[key].path_filter(path_filter, reference=reference):
                     return self._data[key]
                 else:
-                    res = self._data[key].get_next(operation=operation, tags=tags, _called_from_parent_=True, reference=reference, filter=filter)
+                    res = self._data[key].get_next(operation=operation, tags=tags, _called_from_parent_=True, reference=reference, path_filter=path_filter)
                     if res is not None:
                         return res
         else:
             # pretty tricky internal dic access, see http://stackoverflow.com/questions/12328184/how-to-get-the-next-item-in-an-ordereddict
             next = self._data._OrderedDict__map[children.keys()][1]
             while not (next is self._data._OrderedDict__root):
-                if self._data[next[2]].has_operation(operation) and self._data[next[2]].match_tags(tags) and self._data[next[2]].filter(filter, reference=reference):
+                if self._data[next[2]].has_operation(operation) and self._data[next[2]].match_tags(tags) and self._data[next[2]].path_filter(path_filter, reference=reference):
                     return self._data[next[2]]
                 else:
-                    res = self._data[next[2]].get_next(operation=operation, tags=tags, _called_from_parent_=True, reference=reference, filter=filter)
+                    res = self._data[next[2]].get_next(operation=operation, tags=tags, _called_from_parent_=True, reference=reference, path_filter=path_filter)
                     if res is not None:
                         return res
                     children = self._data[next[2]]
@@ -2526,7 +2526,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
 
         # go to parent
         if (self._parent is not None) and (not _called_from_parent_):
-            return self._parent.get_next(self, operation=operation, tags=tags, reference=reference, filter=filter)
+            return self._parent.get_next(self, operation=operation, tags=tags, reference=reference, path_filter=path_filter)
         return None
 
     def get_type(self):
