@@ -133,9 +133,13 @@ class virtualizer(ListedYang, v.Virtualizer):
         self._sorted_children = ["id", "name", "nodes", "links", "metadata", "version"]
         v.GroupingVirtualizer.__init__(self, tag, parent)
 
+    @classmethod
+    def parse_from_text(cls, text):
+        return super(v.Virtualizer, cls).parse_from_text(text)
+
 
 # YANG construct: container virtualizers
-class Virtualizers(GroupingBind):
+class Virtualizers(GroupingBind, GroupingMirror):
     """Container for a list of virtualizers"""
     def __init__(self, tag="virtualizers", parent=None):
         GroupingBind.__init__(self, tag, parent)
