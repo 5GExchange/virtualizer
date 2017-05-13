@@ -34,6 +34,7 @@ import sys
 import string
 import logging
 import json
+import re
 
 logger = logging.getLogger("baseclasses")
 
@@ -349,6 +350,53 @@ class Yang(object):
                 return True
             return self.__dict_[attrib].get_as_text() == value
         return False
+
+    def has_attrs_with_regex(self, av_list):
+        try:
+            if len(av_list) == 0:  # for list entries
+                return self
+            if len(av_list) == 1 and type(av_list[0]) in (list, tuple):
+                return self.has_attrs_with_regex(av_list[0])
+            if type(av_list) is tuple:
+                av_list = list(av_list)
+            if type(av_list[0]) is list:
+                l = av_list.pop(0)
+                attr = l[0]
+            elif type(av_list[0]) is tuple:
+                l = av_list.pop(0)
+                if self.has_attrs_with_regex(l):
+                    return self.has_attrs_with_regex(av_list)
+            elif (len(av_list) == 2) and (isinstance(av_list[1], basestring)): # attrib and value check
+                l = list(av_list)
+                av_list = ()
+                attr = l[0]
+            else:
+                l = av_list.pop(0)
+                attr = l
+            _return = True
+            if hasattr(self, attr):
+                if self.__dict__[attr].is_initialized():
+                    if type(l) in (list, tuple):
+                        if type(l[1]) in (list, tuple):
+                            _return = self.__dict__[attr].has_attrs_with_regex(l[1])  # recursive structure call
+                            if _return and len(av_list) > 0:
+                                return _return and self.has_attrs_with_regex(av_list)
+                            else:
+                                return _return
+                        else:
+                            if re.match(l[1], self.__dict__[attr].get_as_text()) is not None:
+                                if len(av_list) > 0:
+                                    return self.has_attrs_with_regex(av_list)
+                                else:
+                                    return True
+                    else:
+                        if (type(av_list) in (list, tuple)) and (len(av_list)>0):
+                            return self.__dict__[attr].has_attrs_with_regex(av_list)
+                        else:
+                            return True
+            return False
+        except:
+            return False
 
     def has_attrs_with_values(self, av_list, ignore_case=True):
         try:
@@ -2736,6 +2784,39 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         """
         for v in self.values():
             v._convert_leafrefs_to(relative=relative, recursive=recursive)
+
+    def has_attrs_with_regex(self, av_list):
+        def search_keys(pattern):
+            result = []
+            for key in self._data.keys():
+                if re.match(pattern, key):
+                    result.append(key)
+            return result
+        try:
+            if len(av_list) == 1 and type(av_list[0]) in (list, tuple):
+                return self.has_attrs_with_regex(av_list[0])
+            if type(av_list) is tuple:
+                av_list = list(av_list)
+            if type(av_list[0]) is list:
+                l = av_list.pop(0)
+                attr = l[0]
+            elif type(av_list[0]) is tuple:
+                l = av_list.pop(0)
+                if self.has_attrs_with_regex(l):
+                    return self.has_attrs_with_regex(av_list)
+            elif (len(av_list) == 2) and (isinstance(av_list[1], basestring)): # attrib and value check
+                l = list(av_list)
+                av_list = ()
+                attr = l[0]
+            else:
+                l = av_list.pop(0)
+                attr = l
+            if self.has_key(attr):
+                return self[attr].has_attrs_with_regex(av_list)
+            return False
+        except:
+            return False
+
 
     def has_attrs_with_values(self, av_list, ignore_case=True):
         try:
