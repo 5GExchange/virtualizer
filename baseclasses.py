@@ -1310,7 +1310,10 @@ class Yang(object):
         result = cls.__new__(cls)
         result._parent = parent
         for k in self._sorted_children:
-            setattr(result, k, self.__dict__[k].yang_copy(result))
+            if self.__dict__[k] is not None:
+                setattr(result, k, self.__dict__[k].yang_copy(result))
+            else:
+                setattr(result, k, self.__dict__[k])
         for k in __YANG_COPY_ATTRIBUTES__:
             setattr(result, k, copy.deepcopy(self.__dict__[k]))
         for k in self._leaf_attributes:
@@ -2203,7 +2206,10 @@ class ListedYang(Yang):
         result = cls.__new__(cls)
         result._parent = parent
         for k in self._sorted_children:
-            setattr(result, k, self.__dict__[k].yang_copy(result))
+            if self.__dict__[k] is not None:
+                setattr(result, k, self.__dict__[k].yang_copy(result))
+            else:
+                setattr(result, k, self.__dict__[k])
         for k in __YANG_COPY_ATTRIBUTES__:
             setattr(result, k, copy.deepcopy(self.__dict__[k]))
         result._key_attributes = copy.deepcopy(self._key_attributes)
