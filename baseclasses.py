@@ -36,7 +36,7 @@ import logging
 import json
 import re
 
-logger = logging.getLogger("baseclasses")
+logger = logging.getLogger("baseclss")
 
 
 __EDIT_OPERATION_TYPE_ENUMERATION__ = (  # see https://tools.ietf.org/html/rfc6241#section-7.2
