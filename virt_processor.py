@@ -38,8 +38,6 @@ def combine(self, source):
         infra2 = pairs[key][0]
         port2 = pairs[key][1]
 
-        print(key, pairs[key])
-
         # Only connect if one is not defined or if roles are different
         if len(key) < 3 or len(pairs[key]) < 3 or (key[2] != pairs[key][2]):
             self.nodes[infra1].ports[port1].port_type='port-abstract'
