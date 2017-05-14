@@ -285,6 +285,7 @@ class Yang(object):
         self._sorted_children = []  # to hold children Yang list
         self._attributes = ['_operation']
         self._leaf_attributes = list()
+        self._floating = False  # get_path() will not return initial '/', i.e., only relative path is returned
 
     def __setattr__(self, key, value):
         """
@@ -670,9 +671,11 @@ class Yang(object):
         """
         if self._parent is not None:
             p = self._parent.get_path(path_cache=path_cache) + "/" + self.get_tag()
-        else:
+        elif not self._floating:
             p = "/" + self.get_tag()
-        if path_cache is not None:
+        else:
+            p = self.get_tag()
+        if (path_cache is not None) and (not self._floating):
             path_cache[self] = p
         return p
 
@@ -1641,8 +1644,6 @@ class Leaf(Yang):
 
     def __ne__(self, other):
         return not self.__eq__(other)
-
-
 
 
 class StringLeaf(Leaf):
