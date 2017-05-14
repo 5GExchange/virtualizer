@@ -1,4 +1,4 @@
-#    Filename: virtualizers.py		 Created: 2017-05-11  10:33:36
+#    Filename: virtualizers.py		 Created: 2017-05-14  12:25:38
 #    This file was automatically created by a pyang plugin (PNC) developed at Ericsson Hungary Ltd., 2015
 #    Authors: Robert Szabo, Balazs Miriszlai, Akos Recse, Raphael Vicente Rosa
 #    Credits: Robert Szabo, Raphael Vicente Rosa, David Jocha, Janos Elek, Balazs Miriszlai, Akos Recse
@@ -13,7 +13,7 @@
 
 __copyright__ = "Copyright 2017, Ericsson Hungary Ltd."
 __license__ = "Apache License, Version 2.0"
-__version__ = "2016-10-30"
+__version__ = "2017-05-14"
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -78,9 +78,9 @@ class GroupingMirror(Yang):
 
 # YANG construct: list bind
 class BindBind(ListedYang):
-    def __init__(self, tag="bind", parent=None, id=None, srcdomain=None, src=None, dstdomain=None, dst=None):
+    def __init__(self, tag="bind", parent=None, id=None, srcdomain=None, src=None, dstdomain=None, dst=None, subtree=None):
         ListedYang.__init__(self, tag, ["id"])
-        self._sorted_children = ["id", "srcdomain", "src", "dstdomain", "dst"]
+        self._sorted_children = ["id", "srcdomain", "src", "dstdomain", "dst", "subtree"]
         # yang construct: leaf
         self.id = StringLeaf("id", parent=self, value=id, mandatory=True)
         """:type: StringLeaf"""
@@ -96,6 +96,9 @@ class BindBind(ListedYang):
         # yang construct: leaf
         self.dst = Leafref("dst", parent=self, value=dst)
         """:type: Leafref"""
+        # yang construct: leaf
+        self.subtree = StringLeaf("subtree", parent=self, value=subtree)
+        """:type: StringLeaf"""
 
 
 # YANG construct: list mirror
