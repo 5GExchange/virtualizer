@@ -50,8 +50,8 @@ __EDIT_OPERATION_TYPE_ENUMERATION__ = (  # see https://tools.ietf.org/html/rfc62
 DEFAULT = object()
 
 __IGNORED_ATTRIBUTES__ =    ("_parent", "_tag", "_sorted_children", "_referred", "_key_attributes", "version", "_sh")
-__EQ_IGNORED_ATTRIBUTES__ = ("_parent", "_sorted_children", "_referred", "_key_attributes", "version")
-__YANG_COPY_ATTRIBUTES__ =  ("_tag", "_sorted_children", "_operation", "_attributes", "_leaf_attributes")
+__EQ_IGNORED_ATTRIBUTES__ = ("_parent", "_sorted_children", "_referred", "_key_attributes", "version", "_floating")
+__YANG_COPY_ATTRIBUTES__ =  ("_tag", "_sorted_children", "_operation", "_attributes", "_leaf_attributes", "_floating")
 
 __REDUCE_ATTRIBUTES__ = ("")
 
