@@ -2645,7 +2645,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         if key in self._data.keys():
             return self._data[key]
         else:
-            raise KeyError("key not existing")
+            raise KeyError("key not existing: %s" % key)
 
     def __setitem__(self, key, value):
         """
