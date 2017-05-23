@@ -921,8 +921,8 @@ class Yang(object):
             tree = ET.ElementTree(ET.fromstring(text))
             return cls.parse(root=tree.getroot())
         except ET.ParseError as e:
-            raise Exception('XML Text ParseError: %s' % e.message)
-            return None
+            logger.error('XML Text ParseError: {} from {}'.format(e.message, text))
+            return cls()  # return empty object
 
     @classmethod
     def parse_from_json(cls, virt_json):
