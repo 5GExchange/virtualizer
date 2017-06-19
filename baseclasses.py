@@ -762,7 +762,7 @@ class Yang(object):
         if path[0] == "/":  # absolute path
             if self.get_parent() is not None:
                 return self.get_parent().create_path(source, path=path, target_copy_type=target_copy_type)
-            elif self.get_tag() == p[0]:
+            elif self.get_tag() == PathUtils.split_tag_and_key_values(p[0])[0]:
                 p.pop(0)
                 return self.create_path(source, path="/".join(p), target_copy_type=target_copy_type)
             _p = PathUtils.path_to_list(self.get_path())
@@ -815,7 +815,7 @@ class Yang(object):
         if path[0] == "/":  # absolute path
             if self.get_parent() is not None:
                 return self.get_parent().walk_path(path, reference)
-            if self.get_tag() == p[0]:
+            if self.get_tag() == PathUtils.split_tag_and_key_values(p[0])[0]:
                 p.pop(0)
                 return self.walk_path("/".join(p), reference)
             _p = PathUtils.path_to_list(self.get_path())

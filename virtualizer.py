@@ -688,8 +688,9 @@ class VirtualizerNodes(Yang):
 
 
 # YANG construct: container virtualizer
-class Virtualizer(GroupingVirtualizer):
+class Virtualizer(ListedYang, GroupingVirtualizer):
     def __init__(self, tag="virtualizer", parent=None, id=None, name=None, nodes=None, links=None, version='2016-07-08; compiled at 2016-12-09  12:50:20'):
+        ListedYang.__init__(self, tag, ["id"])
         GroupingVirtualizer.__init__(self, tag, parent, id, name, nodes, links, version)
         self._sorted_children = ["id", "name", "nodes", "links", "metadata", "version"]
 

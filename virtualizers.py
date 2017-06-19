@@ -130,15 +130,15 @@ class MirrorMirror(ListedYang):
 
 
 # YANG construct: list virtualizer
-class virtualizer(ListedYang, v.Virtualizer):
-    def __init__(self, tag="virtualizer", parent=None):
-        ListedYang.__init__(self, tag, ["id"])
-        self._sorted_children = ["id", "name", "nodes", "links", "metadata", "version"]
-        v.GroupingVirtualizer.__init__(self, tag, parent)
-
-    @classmethod
-    def parse_from_text(cls, text):
-        return super(v.Virtualizer, cls).parse_from_text(text)
+# class virtualizer(ListedYang, v.Virtualizer):
+#     def __init__(self, tag="virtualizer", parent=None):
+#         ListedYang.__init__(self, tag, ["id"])
+#         self._sorted_children = ["id", "name", "nodes", "links", "metadata", "version"]
+#         v.GroupingVirtualizer.__init__(self, tag, parent)
+#
+#     @classmethod
+#     def parse_from_text(cls, text):
+#         return super(v.Virtualizer, cls).parse_from_text(text)
 
 
 # YANG construct: container virtualizers
@@ -149,8 +149,8 @@ class Virtualizers(GroupingBind, GroupingMirror):
         GroupingMirror.__init__(self, tag, parent)
         self._sorted_children = ["virtualizer", "bind", "mirror"]
         # yang construct: list
-        self.virtualizer = ListYang("virtualizer", parent=self, type=virtualizer)
-        """:type: ListYang(V:virtualizer)"""
+        self.virtualizer = ListYang("virtualizer", parent=self, type=v.Virtualizer)
+        """:type: ListYang(v.Virtualizer)"""
 
     def add(self, item):
         return self.virtualizer.add(item)
