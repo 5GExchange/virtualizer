@@ -7,8 +7,8 @@
 
 __copyright__ = "Copyright 2017, Ericsson Hungary Ltd."
 __license__ = "Apache License, Version 2.0"
-__version_text__ = "yang/baseclasses/v5"
-__version__ = "2017-03-05"
+__version_text__ = "yang/baseclasses/v5bis"
+__version__ = "2017-06-26"
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -49,8 +49,8 @@ __EDIT_OPERATION_TYPE_ENUMERATION__ = (  # see https://tools.ietf.org/html/rfc62
 
 DEFAULT = object()
 
-__IGNORED_ATTRIBUTES__ =    ("_parent", "_tag", "_sorted_children", "_referred", "_key_attributes", "version", "_sh")
-__EQ_IGNORED_ATTRIBUTES__ = ("_parent", "_sorted_children", "_referred", "_key_attributes", "version", "_floating")
+__IGNORED_ATTRIBUTES__ =    ("_parent", "_tag", "_sorted_children", "_referred", "_key_attributes", "_sh")
+__EQ_IGNORED_ATTRIBUTES__ = ("_parent", "_sorted_children", "_referred", "_key_attributes", "_floating")
 __YANG_COPY_ATTRIBUTES__ =  ("_tag", "_sorted_children", "_operation", "_attributes", "_leaf_attributes", "_floating")
 
 __REDUCE_ATTRIBUTES__ = ("")
@@ -1676,11 +1676,6 @@ class StringLeaf(Leaf):
                 e_data.text = None
                 self.data = e_data
             else:
-                # check version values
-                if self._tag == 'version':
-                    if self.get_as_text() != e_data.text:
-                        # it works because version has the correct version as default value
-                        logger.warning('Version are different!')
                 self.set_value(e_data.text)
             if "operation" in e_data.attrib.keys():
                 self.set_operation(e_data.attrib["operation"], recursive=False, force=True)

@@ -361,14 +361,10 @@ module virtualizer {
     }
     uses links; // infra links
     uses metadata;
-    leaf version {
-      description "yang and virtualizer library version";
-      type string;
-    }
   }
 
-  container virtualizer {
+  list virtualizer{
+    key "id";
     uses virtualizer;
   }
-
 }

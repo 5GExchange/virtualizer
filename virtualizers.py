@@ -1,4 +1,4 @@
-#    Filename: virtualizers.py		 Created: 2017-05-14  12:25:38
+#    Filename: virtualizers.py		 Created: 2017-06-28  10:23:09
 #    This file was automatically created by a pyang plugin (PNC) developed at Ericsson Hungary Ltd., 2015
 #    Authors: Robert Szabo, Balazs Miriszlai, Akos Recse, Raphael Vicente Rosa
 #    Credits: Robert Szabo, Raphael Vicente Rosa, David Jocha, Janos Elek, Balazs Miriszlai, Akos Recse
@@ -13,7 +13,7 @@
 
 __copyright__ = "Copyright 2017, Ericsson Hungary Ltd."
 __license__ = "Apache License, Version 2.0"
-__version__ = "2017-05-14"
+__version__ = "2016-10-30"
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,8 +29,8 @@ __version__ = "2017-05-14"
 
 
 from baseclasses import *
-import virtualizer as v
 
+import virtualizer as v
 
 # YANG construct: grouping bind
 class GroupingBind(Yang):
@@ -79,7 +79,7 @@ class GroupingMirror(Yang):
 # YANG construct: list bind
 class BindBind(ListedYang):
     def __init__(self, tag="bind", parent=None, id=None, srcdomain=None, src=None, dstdomain=None, dst=None, subtree=None):
-        ListedYang.__init__(self, tag, ["id"])
+        ListedYang.__init__(self, "bind", ["id"])
         self._sorted_children = ["id", "srcdomain", "src", "dstdomain", "dst", "subtree"]
         # yang construct: leaf
         self.id = StringLeaf("id", parent=self, value=id, mandatory=True)
@@ -104,7 +104,7 @@ class BindBind(ListedYang):
 # YANG construct: list mirror
 class MirrorMirror(ListedYang):
     def __init__(self, tag="mirror", parent=None, id=None, srcdomain=None, filter=None, attrib=None, value=None, dstdomain=None, dst=None):
-        ListedYang.__init__(self, tag, ["id"])
+        ListedYang.__init__(self, "mirror", ["id"])
         self._sorted_children = ["id", "srcdomain", "filter", "attrib", "value", "dstdomain", "dst"]
         # yang construct: leaf
         self.id = StringLeaf("id", parent=self, value=id, mandatory=True)
@@ -127,18 +127,6 @@ class MirrorMirror(ListedYang):
         # yang construct: leaf
         self.dst = Leafref("dst", parent=self, value=dst)
         """:type: Leafref"""
-
-
-# YANG construct: list virtualizer
-# class virtualizer(ListedYang, v.Virtualizer):
-#     def __init__(self, tag="virtualizer", parent=None):
-#         ListedYang.__init__(self, tag, ["id"])
-#         self._sorted_children = ["id", "name", "nodes", "links", "metadata", "version"]
-#         v.GroupingVirtualizer.__init__(self, tag, parent)
-#
-#     @classmethod
-#     def parse_from_text(cls, text):
-#         return super(v.Virtualizer, cls).parse_from_text(text)
 
 
 # YANG construct: container virtualizers
