@@ -1,0 +1,15 @@
+module: virtualizer_info
+   +--rw info
+      +--rw logs
+      |  +--rw log* [object]
+      |     +--rw object    -> 
+      |     +--rw data?     string
+      +--rw tops
+      |  +--rw top* [object]
+      |     +--rw object    -> 
+      |     +--rw data?     string
+      +--rw connections
+         +--rw connection* [object]
+            +--rw object     -> 
+            +--rw objects* [object]
+               +--rw object    -> 
