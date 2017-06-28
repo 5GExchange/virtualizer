@@ -1,4 +1,4 @@
-#    Filename: virtualizer.py		 Created: 2017-06-28  10:07:11
+#    Filename: virtualizer.py		 Created: 2017-06-28  10:35:34
 #    This file was automatically created by a pyang plugin (PNC) developed at Ericsson Hungary Ltd., 2015
 #    Authors: Robert Szabo, Balazs Miriszlai, Akos Recse, Raphael Vicente Rosa
 #    Credits: Robert Szabo, Raphael Vicente Rosa, David Jocha, Janos Elek, Balazs Miriszlai, Akos Recse
@@ -182,9 +182,9 @@ class GroupingPort(GroupingId_name, GroupingMetadata):
 # YANG construct: grouping flowentry
 class GroupingFlowentry(GroupingId_name):
     """The flowentry syntax will follow ovs-ofctrl string format. The UNIFY general tagging mechanism will be use like 'mpls'-> 'tag', i.e., push_tag:tag; pop_tag:tag..."""
-    def __init__(self, tag, parent=None, id=None, name=None, priority=None, port=None, match=None, action=None, out=None, resources=None):
+    def __init__(self, tag, parent=None, id=None, name=None, priority=None, port=None, match=None, action=None, out=None, resources=None, constraints=None):
         GroupingId_name.__init__(self, tag, parent, id, name)
-        self._sorted_children = ["id", "name", "priority", "port", "match", "action", "out", "resources"]
+        self._sorted_children = ["id", "name", "priority", "port", "match", "action", "out", "resources", "constraints"]
         # yang construct: leaf
         self.priority = StringLeaf("priority", parent=self, value=priority)
         """:type: StringLeaf"""
@@ -207,6 +207,13 @@ class GroupingFlowentry(GroupingId_name):
             self.resources = resources
         else:
             self.resources = Link_resource(parent=self, tag="resources")
+        # yang construct: container
+        self.constraints = None
+        """:type: Constraints"""
+        if constraints is not None:
+            self.constraints = constraints
+        else:
+            self.constraints = Constraints(parent=self, tag="constraints")
 
 
 # YANG construct: grouping flowtable
@@ -446,10 +453,10 @@ class L3_address(ListedYang, GroupingL3_address):
 
 # YANG construct: list flowentry
 class Flowentry(ListedYang, GroupingFlowentry):
-    def __init__(self, tag="flowentry", parent=None, id=None, name=None, priority=None, port=None, match=None, action=None, out=None, resources=None):
+    def __init__(self, tag="flowentry", parent=None, id=None, name=None, priority=None, port=None, match=None, action=None, out=None, resources=None, constraints=None):
         ListedYang.__init__(self, "flowentry", ["id"])
-        GroupingFlowentry.__init__(self, tag, parent, id, name, priority, port, match, action, out, resources)
-        self._sorted_children = ["id", "name", "priority", "port", "match", "action", "out", "resources"]
+        GroupingFlowentry.__init__(self, tag, parent, id, name, priority, port, match, action, out, resources, constraints)
+        self._sorted_children = ["id", "name", "priority", "port", "match", "action", "out", "resources", "constraints"]
 
 
 # YANG construct: list link
@@ -569,6 +576,13 @@ class Link_resource(GroupingLink_resource):
         self._sorted_children = ["delay", "bandwidth", "cost"]
 
 
+# YANG construct: container constraints
+class Constraints(GroupingConstraints):
+    def __init__(self, tag="constraints", parent=None):
+        GroupingConstraints.__init__(self, tag, parent)
+        self._sorted_children = ["affinity", "antiaffinity", "variable", "constraint"]
+
+
 # YANG construct: container flowtable
 class FlowtableFlowtable(Yang):
     def __init__(self, tag="flowtable", parent=None):
@@ -640,13 +654,6 @@ class Software_resource(GroupingSoftware_resource):
     def __init__(self, tag="resources", parent=None, cpu=None, mem=None, storage=None, cost=None, zone=None):
         GroupingSoftware_resource.__init__(self, tag, parent, cpu, mem, storage, cost, zone)
         self._sorted_children = ["cpu", "mem", "storage", "cost", "zone"]
-
-
-# YANG construct: container constraints
-class Constraints(GroupingConstraints):
-    def __init__(self, tag="constraints", parent=None):
-        GroupingConstraints.__init__(self, tag, parent)
-        self._sorted_children = ["affinity", "antiaffinity", "variable", "constraint"]
 
 
 # YANG construct: container NF_instances

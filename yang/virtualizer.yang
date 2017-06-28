@@ -223,7 +223,9 @@ module virtualizer {
     container resources{
       uses link-resource;
     }
-
+    container constraints{
+      uses constraints;
+    }
   }
 
   grouping flowtable {
