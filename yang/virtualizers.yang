@@ -2,14 +2,14 @@ module virtualizers {
   namespace "urn:unify:virtualizers";
   prefix "virtualizers";
   import virtualizer { prefix v; }
-
+  
   organization "ETH";
   contact "Robert Szabo <robert.szabo@ericsson.com>";
   
   revision "2016-10-30" {
     description "Bind list added";
   }
-
+  
   grouping bind {
     list bind {
       key "id";
@@ -17,10 +17,53 @@ module virtualizers {
 	type string;
 	mandatory true;
       }
+      leaf srcdomain {
+	type string;
+      }
       leaf src {
 	type leafref {
 	  path "";
 	}
+      }
+      leaf dstdomain {
+	type string;
+      }
+      leaf dst {
+	type leafref {
+	  path "";
+	}
+      }
+      leaf subtree {
+	type string;
+      }
+    }
+  }
+  
+  grouping mirror {
+    list mirror {
+      key "id";
+      leaf id {
+	type string;
+	mandatory true;
+      }
+      leaf srcdomain {
+	type string;
+      }
+      leaf filter {
+	type string {
+	}
+      }
+      leaf attrib {
+	type leafref {
+	  path "";
+	}
+      }
+      leaf value {
+	type string {
+	}
+      }
+      leaf dstdomain {
+	type string;
       }
       leaf dst {
 	type leafref {
@@ -29,13 +72,14 @@ module virtualizers {
       }
     }
   }
-  
+
   container virtualizers {
     description "Container for a list of virtualizers";
-    list virtualizer{ // infra nodes
-      key "id";
-      uses v:virtualizer;
+    list virtualizer{
+        key "id";
+        uses v:virtualizer;
     }
     uses bind;
+    uses mirror;
   }
 }

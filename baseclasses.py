@@ -7,8 +7,8 @@
 
 __copyright__ = "Copyright 2017, Ericsson Hungary Ltd."
 __license__ = "Apache License, Version 2.0"
-__version_text__ = "yang/baseclasses/v5"
-__version__ = "2017-03-05"
+__version_text__ = "yang/baseclasses/v5bis"
+__version__ = "2017-06-26"
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -49,8 +49,9 @@ __EDIT_OPERATION_TYPE_ENUMERATION__ = (  # see https://tools.ietf.org/html/rfc62
 
 DEFAULT = object()
 
-__IGNORED_ATTRIBUTES__ = ("_parent", "_tag", "_sorted_children", "_referred", "_key_attributes", "version", "_sh")
-__EQ_IGNORED_ATTRIBUTES__ = ("_parent", "_sorted_children", "_referred", "_key_attributes", "version")
+__IGNORED_ATTRIBUTES__ =    ("_parent", "_tag", "_sorted_children", "_referred", "_key_attributes", "_sh")
+__EQ_IGNORED_ATTRIBUTES__ = ("_parent", "_sorted_children", "_referred", "_key_attributes", "_floating")
+__YANG_COPY_ATTRIBUTES__ =  ("_tag", "_sorted_children", "_operation", "_attributes", "_leaf_attributes", "_floating")
 
 __REDUCE_ATTRIBUTES__ = ("")
 
@@ -111,6 +112,21 @@ class PathUtils:
             p2.insert(0, "..")
             p1.pop(0)
         return '/'.join(p2)
+
+    @staticmethod
+    def match_path_regexp(path, path_regexp):
+        p = PathUtils.path_to_list(path)
+        _filter = PathUtils.path_to_list(path_regexp)
+        try:
+            while re.match(_filter[0], p[0]) is not None:
+                p.pop(0)
+                _filter.pop(0)
+        finally:
+            if len(_filter)>0:
+                return None
+
+
+
 
     @staticmethod
     def split_tag_and_key_values(tag_with_key_values):
@@ -268,6 +284,8 @@ class Yang(object):
         self._referred = []  # to hold leafref references for backward search
         self._sorted_children = []  # to hold children Yang list
         self._attributes = ['_operation']
+        self._leaf_attributes = list()
+        self._floating = False  # get_path() will not return initial '/', i.e., only relative path is returned
 
     def __setattr__(self, key, value):
         """
@@ -289,7 +307,35 @@ class Yang(object):
             return self._tag in tags
         return self._tag == tags
 
-    def get_next(self, children=None, operation=None, tags=None, _called_from_parent_=False):
+    def path_filter(self, path_filter, reference=None):
+        def check_attrib(base, offset, attrib_path, value):
+            try:
+                a = base.walk_path(offset)
+                a = a.walk_path(attrib_path)
+                if value is not None:
+                    return a.get_value() == value
+                return True
+            except:
+                return False
+
+        if path_filter is None:
+            return True  # empty filter matches everything
+        path = self.get_path()
+        m = re.match(path_filter['path'], path)
+        if m is not None:
+            a_path = path_filter.get('attrib', None)
+            if a_path is not None:
+                if check_attrib(self, m.group(0), a_path, path_filter.get('value', None)):
+                    return True
+                if reference is not None:
+                    return check_attrib(reference, m.group(0), a_path, path_filter.get('value', None))
+                return False
+            return True
+        else:
+            return False
+
+
+    def get_next(self, children=None, operation=None, tags=None, _called_from_parent_=False, reference= None, path_filter=None):
         """
         Returns the next Yang element followed by the one called for. It can be used for in-depth traversar of the yang tree.
         :param children: Yang (for up level call to hand over the callee children)
@@ -304,10 +350,10 @@ class Yang(object):
                 while i < len(self._sorted_children):
                     if (self.__dict__[self._sorted_children[i]] is not None) and \
                             (self.__dict__[self._sorted_children[i]].is_initialized()):
-                        if self.__dict__[self._sorted_children[i]].has_operation(operation) and self.__dict__[self._sorted_children[i]].match_tags(tags):
+                        if self.__dict__[self._sorted_children[i]].has_operation(operation) and self.__dict__[self._sorted_children[i]].match_tags(tags) and self.__dict__[self._sorted_children[i]].path_filter(path_filter, reference=reference):
                             return self.__dict__[self._sorted_children[i]]
                         else:
-                            res = self.__dict__[self._sorted_children[i]].get_next(operation=operation, tags=tags, _called_from_parent_=True)
+                            res = self.__dict__[self._sorted_children[i]].get_next(operation=operation, tags=tags, _called_from_parent_=True, reference=reference, path_filter=path_filter)
                             if res is not None:
                                 return res
                     i += 1
@@ -319,16 +365,16 @@ class Yang(object):
                 while i < len(self._sorted_children):
                     if (self.__dict__[self._sorted_children[i]] is not None) and \
                             (self.__dict__[self._sorted_children[i]].is_initialized()):
-                        if self.__dict__[self._sorted_children[i]].has_operation(operation) and self.__dict__[self._sorted_children[i]].match_tags(tags):
+                        if self.__dict__[self._sorted_children[i]].has_operation(operation) and self.__dict__[self._sorted_children[i]].match_tags(tags) and self.__dict__[self._sorted_children[i]].path_filter(path_filter, reference=reference):
                             return self.__dict__[self._sorted_children[i]]
                         else:
-                            res = self.__dict__[self._sorted_children[i]].get_next(operation=operation, tags=tags, _called_from_parent_=True)
+                            res = self.__dict__[self._sorted_children[i]].get_next(operation=operation, tags=tags, _called_from_parent_=True, reference=reference, path_filter=path_filter)
                             if res is not None:
                                 return res
                     i += 1
         # go to parent
         if (self._parent is not None) and (not _called_from_parent_):
-            return self._parent.get_next(self, operation=operation, tags=tags)
+            return self._parent.get_next(self, operation=operation, tags=tags, reference=reference, path_filter=path_filter)
         return None
 
     def get_attr(self, attrib, v=None, default=DEFAULT):
@@ -601,30 +647,11 @@ class Yang(object):
                         _reduce = False
                 else:
                     _reduce = False
-        _reduce &= self.has_operation(reference.get_operation())
-        return _reduce
-
-        for k, v in self.__dict__.items():
-            # if hasattr(v, "mandatory") and v.get_mandatory() is True:
-            #     _ignores.append(k)
-            if type(self._parent) is ListYang:  # todo: move this outside
-                if k == self.keys():
-                    _ignores.append(k)
-            if k not in _ignores:
-                if isinstance(v, Yang):
-                    if k in reference.__dict__.keys():
-                        if type(v) == type(reference.__dict__[k]):
-                            if v.reduce(reference.__dict__[k]):
-                                v.clear_data()
-                            else:
-                                # v.set_operation("replace", recursive=False, force=False)
-                                _reduce = False
-                    else:
-                        v.set_operation("create", recursive=False, force=False)
-                        _reduce = False
-                elif (v is not None) and (v != reference.__dict__[k]):  # to handle _operation, etc.
-                    _reduce = False
-        # self.set_operation("merge", recursive=False, force=False)
+        if self.has_operation(reference.get_operation()):
+            self.set_operation(None, recursive=None, force=True)
+        else:
+            _reduce = False
+        # _reduce &= self.has_operation(reference.get_operation())
         return _reduce
 
     def _diff(self, source, ignores=None):
@@ -691,9 +718,11 @@ class Yang(object):
         """
         if self._parent is not None:
             p = self._parent.get_path(path_cache=path_cache) + "/" + self.get_tag()
-        else:
+        elif not self._floating:
             p = "/" + self.get_tag()
-        if path_cache is not None:
+        else:
+            p = self.get_tag()
+        if (path_cache is not None) and (not self._floating):
             path_cache[self] = p
         return p
 
@@ -733,6 +762,8 @@ class Yang(object):
         l = p.pop(0)
         if l == "..":
             return self.get_parent().create_from_path(p)
+        elif l == self._tag:
+            return self.create_from_path(p)
         elif (l.find("[") > 0) and (l.find("]") > 0):
             attrib = l[0: l.find("[")]
             keystring = l[l.find("[") + 1: l.rfind("]")]
@@ -778,7 +809,7 @@ class Yang(object):
         if path[0] == "/":  # absolute path
             if self.get_parent() is not None:
                 return self.get_parent().create_path(source, path=path, target_copy_type=target_copy_type)
-            elif self.get_tag() == p[0]:
+            elif self.get_tag() == PathUtils.split_tag_and_key_values(p[0])[0]:
                 p.pop(0)
                 return self.create_path(source, path="/".join(p), target_copy_type=target_copy_type)
             _p = PathUtils.path_to_list(self.get_path())
@@ -817,6 +848,9 @@ class Yang(object):
         :param path: string
         :return: attribute instance of Yang
         """
+        if type(path) is Leafref:
+            return self.walk_path(path.data)
+
         if path == "":
             return self
 
@@ -828,7 +862,7 @@ class Yang(object):
         if path[0] == "/":  # absolute path
             if self.get_parent() is not None:
                 return self.get_parent().walk_path(path, reference)
-            if self.get_tag() == p[0]:
+            if self.get_tag() == PathUtils.split_tag_and_key_values(p[0])[0]:
                 p.pop(0)
                 return self.walk_path("/".join(p), reference)
             _p = PathUtils.path_to_list(self.get_path())
@@ -913,7 +947,6 @@ class Yang(object):
             return cls.parse(root=tree.getroot())
         except ET.ParseError as e:
             raise Exception('XML file ParseError: %s' % e.message)
-            return None
 
     @classmethod
     def parse_from_text(cls, text):
@@ -921,8 +954,8 @@ class Yang(object):
             tree = ET.ElementTree(ET.fromstring(text))
             return cls.parse(root=tree.getroot())
         except ET.ParseError as e:
-            logger.error('XML Text ParseError: {} from {}'.format(e.message, text))
-            return cls()  # return empty object
+            logger.exception("parse_from_text: " + text)
+            raise Exception('XML Text ParseError: %s' % e.message)
 
     @classmethod
     def parse_from_json(cls, virt_json):
@@ -1071,6 +1104,9 @@ class Yang(object):
         :param execute: boolean, determines if delete operations must be carried out (True) or just marked (False)
         :return: -
         """
+        if issubclass(type(operation), Yang):
+            operation = operation._operation
+
         if operation not in ((None,) + __EDIT_OPERATION_TYPE_ENUMERATION__):
             raise ValueError("Illegal operation value: operation={operation} at {yang}".format(operation=operation,
                                                                                                yang=self.get_as_text()))
@@ -1169,6 +1205,34 @@ class Yang(object):
         return self.__translate_and_merge__(translator, destination, path_caches=path_caches, execute=execute)
 
 
+    def translate(self, translator, destination, path_caches=None):
+        """
+        Common recursive functionaltify for merge() and patch() methods with TRANSLATION. Execute defines if operation is copied or executed.
+        :param destination: instance of Yang
+        :param execute: True - operation is executed; False - operation is copied
+        :return: yang: destination object
+        """
+        # prepare caches if needed
+        if path_caches is None:
+            path_caches = dict()
+            path_caches['dst'] = dict()
+            path_caches['src'] = dict()
+
+        dst_path = translator.get_target_path(self.get_path(path_caches['src']))
+        tmp = destination.empty_copy()
+        dst = tmp.create_from_path(dst_path)
+
+        dst.set_operation(self.get_operation(), recursive=False)  # copy operation over
+
+        for k in self._sorted_children:
+            if hasattr(self, '_key_attributes') and (k in self._key_attributes):
+                pass
+            else:
+                if dst.__dict__[k] is None:
+                    dst.create_from_path(k)
+                self.__dict__[k].__translate_and_merge__(translator, dst.__dict__[k], path_caches=path_caches)
+        return dst
+
     def __translate_and_merge__(self, translator, destination, path_caches=None, execute=False):
         """
         Common recursive functionaltify for merge() and patch() methods with TRANSLATION. Execute defines if operation is copied or executed.
@@ -1196,6 +1260,8 @@ class Yang(object):
 
         if execute:
             dst.set_operation(None, recursive=False)
+        else:
+            dst.set_operation(self)
         return dst
 
     def __merge__(self, source, execute=False):
@@ -1275,6 +1341,35 @@ class Yang(object):
         :return: instance copy (of Yang)
         """
         return copy.deepcopy(self)
+
+    def full_copy_subtree(self):
+        """
+        Performs deepcopy of instance of Yang
+        :param: -
+        :return: instance copy (of Yang)
+        """
+        # let's save the parent
+        _parent = self._parent
+        self._parent = None  # to avoid upstream copying
+        _subtree = copy.deepcopy(self)
+        self._parent = _parent
+        return _subtree
+
+    def yang_copy(self, parent=None):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        result._parent = parent
+        for k in self._sorted_children:
+            if self.__dict__[k] is not None:
+                setattr(result, k, self.__dict__[k].yang_copy(result))
+            else:
+                setattr(result, k, self.__dict__[k])
+        for k in __YANG_COPY_ATTRIBUTES__:
+            setattr(result, k, copy.deepcopy(self.__dict__[k]))
+        for k in self._leaf_attributes:
+            setattr(result, k, copy.deepcopy(self.__dict__[k]))
+        return result
+
 
     def delete(self):  # FIXME: if referred by a LeafRef?
         """
@@ -1400,6 +1495,7 @@ class Leaf(Yang):
         """:type: boolean"""
         self.units = ""
         """:type: string"""
+        self._leaf_attributes.extend(['data', 'mandatory'])
 
     def __translate_and_merge__(self, translator, destination, path_caches=None, execute=False):
         """
@@ -1409,12 +1505,18 @@ class Leaf(Yang):
         :return: -
         """
 
+        if type(self) != type(destination):
+            dst_path = translator.get_target_path(self.get_path(path_caches['src']))
+            destination = destination.create_from_path(dst_path)
+
         if execute and self.has_operation(('delete', 'remove')):
             destination.clear_data()
         else:
             destination.set_value(self.get_value())
             if execute:
                 destination.set_operation(None, recursive=False)
+            else:
+                destination.set_operation(self)
 
 
     def get_value(self):
@@ -1590,6 +1692,7 @@ class Leaf(Yang):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+
 class StringLeaf(Leaf):
     """
     Class defining Leaf with string extensions
@@ -1604,6 +1707,7 @@ class StringLeaf(Leaf):
         """:type: string"""
         self.set_mandatory(mandatory)  # FIXME: Mandatory should be handled in the Leaf class!
         """:type: boolean"""
+        self._leaf_attributes.extend(['units'])
 
     def parse(self, root):
         """
@@ -1619,11 +1723,6 @@ class StringLeaf(Leaf):
                 e_data.text = None
                 self.data = e_data
             else:
-                # check version values
-                if self._tag == 'version':
-                    if self.get_as_text() != e_data.text:
-                        # it works because version has the correct version as default value
-                        logger.warning('Version are different!')
                 self.set_value(e_data.text)
             if "operation" in e_data.attrib.keys():
                 self.set_operation(e_data.attrib["operation"], recursive=False, force=True)
@@ -1905,6 +2004,7 @@ class Leafref(StringLeaf):
         """:type: Yang"""
         # super call calls set_value()
         super(Leafref, self).__init__(tag, parent=parent, value=value, mandatory=mandatory)
+        self._leaf_attributes.append('target')
 
     def __translate_and_merge__(self, translator, destination, path_caches=None, execute=False):
         """
@@ -2141,6 +2241,20 @@ class ListedYang(Yang):
         super(ListedYang, self).__init__(tag, parent)
         self._key_attributes = keys
 
+    def yang_copy(self, parent=None):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        result._parent = parent
+        for k in self._sorted_children:
+            if self.__dict__[k] is not None:
+                setattr(result, k, self.__dict__[k].yang_copy(result))
+            else:
+                setattr(result, k, self.__dict__[k])
+        for k in __YANG_COPY_ATTRIBUTES__:
+            setattr(result, k, copy.deepcopy(self.__dict__[k]))
+        result._key_attributes = copy.deepcopy(self._key_attributes)
+        return result
+
     def __translate_and_merge__(self, translator, destination, path_caches=None, execute=False):
         """
         Common recursive functionaltify for merge() and patch() methods with TRANSLATION. Execute defines if operation is copied or executed.
@@ -2159,7 +2273,7 @@ class ListedYang(Yang):
             return
 
         if not self.is_initialized():
-            return
+            return dst
 
         for k in self._sorted_children:
             if k not in dst._key_attributes:
@@ -2169,7 +2283,10 @@ class ListedYang(Yang):
 
         if execute:
             dst.set_operation(None, recursive=False)
-        pass
+        else:
+            dst.set_operation(self)
+
+        return dst
 
     def is_initialized(self, ignore_key=False):
         """
@@ -2319,7 +2436,7 @@ class LeafListYang(Yang):
 
     pass
 
-    def get_next(self, children=None, operation=None, tags=None, _called_from_parent_=False):
+    def get_next(self, children=None, operation=None, tags=None, _called_from_parent_=False, reference=None, path_filter=None):
         """
         Overrides Yang method. Returns the next Yang element followed by the one called for. It can be used for in-depth traversar of the yang tree.
         :param children: Yang (for up level call to hand over the callee children)
@@ -2330,18 +2447,18 @@ class LeafListYang(Yang):
         if children is None:
             # return first key
             for key in self._data:
-                if self._data[key].has_operation(operation) and self._data[key].match_tags(tags):
+                if self._data[key].has_operation(operation) and self._data[key].match_tags(tags) and self._data[key].path_filter(path_filter, reference=reference):
                     return self._data[key]
         else:
             # pretty tricky internal dic access, see http://stackoverflow.com/questions/12328184/how-to-get-the-next-item-in-an-ordereddict
             next = self._data._OrderedDict__map[children.keys()][1]
             while not (next is self._data._OrderedDict__root):
-                if self._data[next[2]].has_operation(operation) and self._data[next[2]].match_tags(tags):
+                if self._data[next[2]].has_operation(operation) and self._data[next[2]].match_tags(tags) and self._data[next[2]].path_filter(path_filter, reference=reference):
                     return self._data[next[2]]
 
         # go to parent
         if (self._parent is not None) and (not _called_from_parent_):
-            return self._parent.get_next(self, operation=operation, tags=tags)
+            return self._parent.get_next(self, operation=operation, tags=tags, reference=reference, path_filter=path_filter)
         return None
 
     def add(self, item):
@@ -2401,6 +2518,16 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         self._data = OrderedDict()
         self._type = type
 
+    def yang_copy(self, parent=None):
+        cls = self.__class__
+        result = cls(self._tag, parent=parent, type=self._type)
+        for k, v in self._data.items():
+            result._data[k] = v.yang_copy(result)
+        for k in __YANG_COPY_ATTRIBUTES__:
+            setattr(result, k, copy.deepcopy(self.__dict__[k]))
+        return result
+
+
     def __translate_and_merge__(self, translator, destination, path_caches=None, execute=False):
         """
         Common recursive functionaltify for merge() and patch() methods with TRANSLATION. Execute defines if operation is copied or executed.
@@ -2413,7 +2540,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
             v.__translate_and_merge__(translator, destination, path_caches=path_caches, execute=execute)
 
 
-    def get_next(self, children=None, operation=None, tags=None, _called_from_parent_=False):
+    def get_next(self, children=None, operation=None, tags=None, _called_from_parent_=False, reference=None, path_filter=None):
         """
         Overrides Yang method. Returns the next Yang element followed by the one called for. It can be used for in-depth traversar of the yang tree.
         :param children: Yang (for up level call to hand over the callee children)
@@ -2424,20 +2551,20 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         if children is None:
             # return first key
             for key in self._data:
-                if self._data[key].has_operation(operation) and self._data[key].match_tags(tags):
+                if self._data[key].has_operation(operation) and self._data[key].match_tags(tags) and self._data[key].path_filter(path_filter, reference=reference):
                     return self._data[key]
                 else:
-                    res = self._data[key].get_next(operation=operation, tags=tags, _called_from_parent_=True)
+                    res = self._data[key].get_next(operation=operation, tags=tags, _called_from_parent_=True, reference=reference, path_filter=path_filter)
                     if res is not None:
                         return res
         else:
             # pretty tricky internal dic access, see http://stackoverflow.com/questions/12328184/how-to-get-the-next-item-in-an-ordereddict
             next = self._data._OrderedDict__map[children.keys()][1]
             while not (next is self._data._OrderedDict__root):
-                if self._data[next[2]].has_operation(operation) and self._data[next[2]].match_tags(tags):
+                if self._data[next[2]].has_operation(operation) and self._data[next[2]].match_tags(tags) and self._data[next[2]].path_filter(path_filter, reference=reference):
                     return self._data[next[2]]
                 else:
-                    res = self._data[next[2]].get_next(operation=operation, tags=tags, _called_from_parent_=True)
+                    res = self._data[next[2]].get_next(operation=operation, tags=tags, _called_from_parent_=True, reference=reference, path_filter=path_filter)
                     if res is not None:
                         return res
                     children = self._data[next[2]]
@@ -2445,7 +2572,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
 
         # go to parent
         if (self._parent is not None) and (not _called_from_parent_):
-            return self._parent.get_next(self, operation=operation, tags=tags)
+            return self._parent.get_next(self, operation=operation, tags=tags, reference=reference, path_filter=path_filter)
         return None
 
     def get_type(self):
@@ -2645,7 +2772,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         if key in self._data.keys():
             return self._data[key]
         else:
-            raise KeyError("key not existing: %s" % key)
+            raise KeyError("key does not exist: {key} at: {item}".format(key=str(key), item=str(self)))
 
     def __setitem__(self, key, value):
         """
@@ -2688,7 +2815,8 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
                     # self[key].set_operation("replace", recursive=False, force=False)
                     _reduce = False
             else:
-                self[key].set_operation("create", recursive=False, force=False)
+                self[key].set_operation(None, recursive=True, force=True)
+                self[key].set_operation("create", recursive=False, force=True)
                 _reduce = False
         return _reduce
 
