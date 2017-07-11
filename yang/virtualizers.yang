@@ -73,12 +73,11 @@ module virtualizers {
     }
   }
 
-  
   container virtualizers {
     description "Container for a list of virtualizers";
-    list virtualizer{ // infra nodes
-      key "id";
-      uses v:virtualizer;
+    list virtualizer{
+        key "id";
+        uses v:virtualizer;
     }
     uses bind;
     uses mirror;

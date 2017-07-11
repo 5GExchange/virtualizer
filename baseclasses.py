@@ -7,8 +7,8 @@
 
 __copyright__ = "Copyright 2017, Ericsson Hungary Ltd."
 __license__ = "Apache License, Version 2.0"
-__version_text__ = "yang/baseclasses/v5"
-__version__ = "2017-03-05"
+__version_text__ = "yang/baseclasses/v5bis"
+__version__ = "2017-06-26"
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import logging
 import json
 import re
 
-logger = logging.getLogger("baseclasses")
+logger = logging.getLogger("baseclss")
 
 
 __EDIT_OPERATION_TYPE_ENUMERATION__ = (  # see https://tools.ietf.org/html/rfc6241#section-7.2
@@ -49,8 +49,8 @@ __EDIT_OPERATION_TYPE_ENUMERATION__ = (  # see https://tools.ietf.org/html/rfc62
 
 DEFAULT = object()
 
-__IGNORED_ATTRIBUTES__ =    ("_parent", "_tag", "_sorted_children", "_referred", "_key_attributes", "version", "_sh")
-__EQ_IGNORED_ATTRIBUTES__ = ("_parent", "_sorted_children", "_referred", "_key_attributes", "version", "_floating")
+__IGNORED_ATTRIBUTES__ =    ("_parent", "_tag", "_sorted_children", "_referred", "_key_attributes", "_sh")
+__EQ_IGNORED_ATTRIBUTES__ = ("_parent", "_sorted_children", "_referred", "_key_attributes", "_floating")
 __YANG_COPY_ATTRIBUTES__ =  ("_tag", "_sorted_children", "_operation", "_attributes", "_leaf_attributes", "_floating")
 
 __REDUCE_ATTRIBUTES__ = ("")
@@ -396,6 +396,53 @@ class Yang(object):
                 return True
             return self.__dict_[attrib].get_as_text() == value
         return False
+
+    def has_attrs_with_regex(self, av_list):
+        try:
+            if len(av_list) == 0:  # for list entries
+                return self
+            if len(av_list) == 1 and type(av_list[0]) in (list, tuple):
+                return self.has_attrs_with_regex(av_list[0])
+            if type(av_list) is tuple:
+                av_list = list(av_list)
+            if type(av_list[0]) is list:
+                l = av_list.pop(0)
+                attr = l[0]
+            elif type(av_list[0]) is tuple:
+                l = av_list.pop(0)
+                if self.has_attrs_with_regex(l):
+                    return self.has_attrs_with_regex(av_list)
+            elif (len(av_list) == 2) and (isinstance(av_list[1], basestring)): # attrib and value check
+                l = list(av_list)
+                av_list = ()
+                attr = l[0]
+            else:
+                l = av_list.pop(0)
+                attr = l
+            _return = True
+            if hasattr(self, attr):
+                if self.__dict__[attr].is_initialized():
+                    if type(l) in (list, tuple):
+                        if type(l[1]) in (list, tuple):
+                            _return = self.__dict__[attr].has_attrs_with_regex(l[1])  # recursive structure call
+                            if _return and len(av_list) > 0:
+                                return _return and self.has_attrs_with_regex(av_list)
+                            else:
+                                return _return
+                        else:
+                            if re.match(l[1], self.__dict__[attr].get_as_text()) is not None:
+                                if len(av_list) > 0:
+                                    return self.has_attrs_with_regex(av_list)
+                                else:
+                                    return True
+                    else:
+                        if (type(av_list) in (list, tuple)) and (len(av_list)>0):
+                            return self.__dict__[attr].has_attrs_with_regex(av_list)
+                        else:
+                            return True
+            return False
+        except:
+            return False
 
     def has_attrs_with_values(self, av_list, ignore_case=True):
         try:
@@ -762,7 +809,7 @@ class Yang(object):
         if path[0] == "/":  # absolute path
             if self.get_parent() is not None:
                 return self.get_parent().create_path(source, path=path, target_copy_type=target_copy_type)
-            elif self.get_tag() == p[0]:
+            elif self.get_tag() == PathUtils.split_tag_and_key_values(p[0])[0]:
                 p.pop(0)
                 return self.create_path(source, path="/".join(p), target_copy_type=target_copy_type)
             _p = PathUtils.path_to_list(self.get_path())
@@ -815,7 +862,7 @@ class Yang(object):
         if path[0] == "/":  # absolute path
             if self.get_parent() is not None:
                 return self.get_parent().walk_path(path, reference)
-            if self.get_tag() == p[0]:
+            if self.get_tag() == PathUtils.split_tag_and_key_values(p[0])[0]:
                 p.pop(0)
                 return self.walk_path("/".join(p), reference)
             _p = PathUtils.path_to_list(self.get_path())
@@ -1676,11 +1723,6 @@ class StringLeaf(Leaf):
                 e_data.text = None
                 self.data = e_data
             else:
-                # check version values
-                if self._tag == 'version':
-                    if self.get_as_text() != e_data.text:
-                        # it works because version has the correct version as default value
-                        logger.warning('Version are different!')
                 self.set_value(e_data.text)
             if "operation" in e_data.attrib.keys():
                 self.set_operation(e_data.attrib["operation"], recursive=False, force=True)
@@ -2110,12 +2152,6 @@ class Leafref(StringLeaf):
                 pass
             raise ValueError("{target} from {obj} is not available in \n{virt}".format(target=self.data,obj=self.get_path(),virt=src.html()))
 
-
-
-
-
-
-
     def bind(self, relative=True, reference=None):
         """
         Binds the target and add the referee to the referende list in the target. The path is updated to relative or absolut based on the parameter
@@ -2131,21 +2167,24 @@ class Leafref(StringLeaf):
         elif self.data is not None:
             if self._parent is not None:
                 try:
-                    self.target = self.walk_path(self.data)
+                    if not '://' in self.data:
+                        self.target = self.walk_path(self.data)
                 except (ValueError):
                     if reference is not None:
                         self.create_path(source=reference, path=self.data, target_copy_type='full')
                         self.target = self.walk_path(self.data)
                     else:
                         raise
-                self.target.set_referred(self)
-                if ((self.data[0] == "/") and (relative is True)) or ((self.data[0] != "/") and (relative is False)):
-                    self.bind(relative=relative)
-
+                if self.target is not None:
+                    self.target.set_referred(self)
+                if not '://' in self.data:
+                    if ((self.data[0] == "/") and (relative is True)) or ((self.data[0] != "/") and (relative is False)):
+                        self.bind(relative=relative)
 
     def unbind(self):
         if self.target is not None:
             self.target.unset_referred(self)
+            self.target = None
 
     def clear_data(self):
         """
@@ -2873,6 +2912,39 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         """
         for v in self.values():
             v._convert_leafrefs_to(relative=relative, recursive=recursive)
+
+    def has_attrs_with_regex(self, av_list):
+        def search_keys(pattern):
+            result = []
+            for key in self._data.keys():
+                if re.match(pattern, key):
+                    result.append(key)
+            return result
+        try:
+            if len(av_list) == 1 and type(av_list[0]) in (list, tuple):
+                return self.has_attrs_with_regex(av_list[0])
+            if type(av_list) is tuple:
+                av_list = list(av_list)
+            if type(av_list[0]) is list:
+                l = av_list.pop(0)
+                attr = l[0]
+            elif type(av_list[0]) is tuple:
+                l = av_list.pop(0)
+                if self.has_attrs_with_regex(l):
+                    return self.has_attrs_with_regex(av_list)
+            elif (len(av_list) == 2) and (isinstance(av_list[1], basestring)): # attrib and value check
+                l = list(av_list)
+                av_list = ()
+                attr = l[0]
+            else:
+                l = av_list.pop(0)
+                attr = l
+            if self.has_key(attr):
+                return self[attr].has_attrs_with_regex(av_list)
+            return False
+        except:
+            return False
+
 
     def has_attrs_with_values(self, av_list, ignore_case=True):
         try:
