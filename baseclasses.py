@@ -772,7 +772,7 @@ class Yang(object):
                 if self.match_keys(**keys):
                     return self.create_from_path(p)
                 else:
-                    raise ValueError("Fixme: key mismatch at:\n{}\nfor path: ".format(self, path))
+                    raise ValueError("Error: cannot create path at this entry, check configurations!!!\n{}\nfor path: {}".format(self, path))
             try:
                 return self.__dict__[attrib][keys].create_from_path(p)
             except:
