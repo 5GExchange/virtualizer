@@ -126,6 +126,15 @@ class PathUtils:
                 return None
 
 
+    @staticmethod
+    def remove_id_from_path(path):
+        '''
+        Returns with a simple type path by removing ids from the given path.
+        Example:
+            /virtualizer/nodes/node[id=1]/ports/port[id=2] => /virtualizer/nodes/node/ports/port
+        '''
+        id_regex = re.compile('\[(.*?)\]')
+        return re.sub(id_regex, '', path)
 
 
     @staticmethod
