@@ -965,6 +965,8 @@ class Yang(object):
     @classmethod
     def parse_from_text(cls, text):
         try:
+            if text == "":
+                return cls()
             tree = ET.ElementTree(ET.fromstring(text))
             return cls.parse(root=tree.getroot())
         except ET.ParseError as e:
