@@ -805,53 +805,58 @@ class Yang(object):
         :param path: string, path to create; if None then source's path is used
         :return: Yang, Yang object at the source instance's / path's path
         """
-        if path is None:
-            path = source.get_path()
-        if type(path) in (list, tuple):
-            p = path
-        else:
-            p = PathUtils.path_to_list(path)
-        if len(p) < 1:
-            return self
-        _copy_type = "empty"
-        if len(p) == 1:
-            _copy_type = target_copy_type
-        l = p.pop(0)
-        if l == "":  # absolute path
-            if self.get_parent() is not None:
+        try:
+            if path is None:
+                path = source.get_path()
+            if type(path) in (list, tuple):
+                p = path
+            else:
+                p = PathUtils.path_to_list(path)
+            if len(p) < 1:
+                return self
+            _copy_type = "empty"
+            if len(p) == 1:
+                _copy_type = target_copy_type
+            l = p.pop(0)
+            if l == "":  # absolute path
+                if self.get_parent() is not None:
+                    return self.get_parent().create_path(source, path=path, target_copy_type=target_copy_type)
+                elif self.get_tag() == PathUtils.split_tag_and_key_values(p[0])[0]:
+                    p.pop(0)
+                    return self.create_path(source, path=p, target_copy_type=target_copy_type)
+                _p = PathUtils.path_to_list(self.get_path())
+                if p[0] == _p[1]:
+                    p.pop(0)
+                    return self.create_path(source, path=p, target_copy_type=target_copy_type)
+                raise ValueError("Root tag not found in walk_path()")
+            if l == "..":
                 return self.get_parent().create_path(source, path=p, target_copy_type=target_copy_type)
-            elif self.get_tag() == PathUtils.split_tag_and_key_values(p[0])[0]:
-                p.pop(0)
-                return self.create_path(source, path=p, target_copy_type=target_copy_type)
-            _p = PathUtils.path_to_list(self.get_path())
-            if p[0] == _p[1]:
-                p.pop(0)
-                return self.create_path(source, path=p, target_copy_type=target_copy_type)
-            raise ValueError("Root tag not found in walk_path()")
-        if l == "..":
-            return self.get_parent().create_path(source, path=p, target_copy_type=target_copy_type)
-        elif (l.find("[") > 0) and (l.find("]") > 0):
-            attrib = l[0: l.find("[")]
-            keystring = l[l.find("[") + 1: l.rfind("]")]
-            key = list()
-            keyvalues = keystring.split(",")
-            for kv in keyvalues:
-                v = kv.split("=")
-                key.append(v[1])
-            if len(key) == 1:
-                key = key[0]
+            elif (l.find("[") > 0) and (l.find("]") > 0):
+                attrib = l[0: l.find("[")]
+                keystring = l[l.find("[") + 1: l.rfind("]")]
+                key = list()
+                keyvalues = keystring.split(",")
+                for kv in keyvalues:
+                    v = kv.split("=")
+                    key.append(v[1])
+                if len(key) == 1:
+                    key = key[0]
 
-            if not (key in self.__dict__[attrib].keys()):
-                _yang = source.walk_path(self.get_path()).__dict__[attrib][key]
-                self.__dict__[attrib].add(_yang.copy(_copy_type))
-            return getattr(self, attrib)[key].create_path(source, path=p, target_copy_type=target_copy_type)
-        else:
-            if (not (l in self.__dict__.keys())) or (getattr(self, l) is None):
-                _yang = getattr(source.walk_path(self.get_path()), l)
-                self.__dict__[l] = _yang.copy(_copy_type)
-                self.__dict__[l].set_parent(self)
-            return getattr(self, l).create_path(source, path=p, target_copy_type=target_copy_type)
-        raise ValueError("Root tag not found in walk_path()")
+                if not (key in self.__dict__[attrib].keys()):
+                    _yang = source.walk_path(self.get_path()).__dict__[attrib][key]
+                    self.__dict__[attrib].add(_yang.copy(_copy_type))
+                return getattr(self, attrib)[key].create_path(source, path=p, target_copy_type=target_copy_type)
+            else:
+                if (not (l in self.__dict__.keys())) or (getattr(self, l) is None):
+                    _yang = getattr(source.walk_path(self.get_path()), l)
+                    self.__dict__[l] = _yang.copy(_copy_type)
+                    self.__dict__[l].set_parent(self)
+                return getattr(self, l).create_path(source, path=p, target_copy_type=target_copy_type)
+            raise ValueError("Root tag not found in walk_path()")
+        except Exception as e:
+            logger.error("CreatePath: attrib={} path={} at\n{}".format(l, '/'.join(p),self))
+            raise e
+
 
     def walk_path(self, path, reference=None):
         """
@@ -1351,7 +1356,9 @@ class Yang(object):
         :param: -
         :return: instance copy (of Yang)
         """
-        return self.__class__(self._tag)
+        result = self.__class__(self._tag)
+        result._referred = []
+        return result
 
 
     def full_copy(self):
@@ -1378,6 +1385,7 @@ class Yang(object):
     def yang_copy(self, parent=None):
         cls = self.__class__
         result = cls.__new__(cls)
+        result._referred = []
         result._parent = parent
         for k in self._sorted_children:
             if self.__dict__[k] is not None:
@@ -1414,6 +1422,8 @@ class Yang(object):
         :param leaf_ref: LeafRef
         :return: -
         """
+        if not hasattr(self, '_referred'):
+            self._referred = []
         if leaf_ref not in self._referred:
             self._referred.append(leaf_ref)
 
@@ -1423,6 +1433,8 @@ class Yang(object):
         :param leaf_ref: LeafRef
         :return: -
         """
+        if not hasattr(self, '_referred'):
+            self._referred = []
         if leaf_ref in self._referred:
             self._referred.remove(leaf_ref)
 
