@@ -961,12 +961,15 @@ class Yang(object):
     def parse_from_text(cls, text):
         try:
             if text == "":
-                return cls()
+                raise ValueError("Empty file")
             tree = ET.ElementTree(ET.fromstring(text))
             return cls.parse(root=tree.getroot())
         except ET.ParseError as e:
-            logger.exception("parse_from_text: " + text)
-            raise Exception('XML Text ParseError: %s' % e.message)
+            logger.exception("parse error: " + text)
+            raise e
+        except ValueError as e:
+            logger.warning("parse_from_file EMPTY input")
+            raise e
 
     @classmethod
     def parse_from_json(cls, virt_json):
