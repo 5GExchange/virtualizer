@@ -789,7 +789,6 @@ class Yang(object):
 
         raise ValueError("create_from_path: no conditions matched ")
 
-
     def create_path(self, source, path=None, target_copy_type=None):
         """
         Create yang tree from source for non-existing objects along the path
@@ -799,26 +798,29 @@ class Yang(object):
         """
         if path is None:
             path = source.get_path()
-        if path == "":
+        if type(path) in (list, tuple):
+            p = path
+        else:
+            p = PathUtils.path_to_list(path)
+        if len(p) < 1:
             return self
-        p = PathUtils.path_to_list(path)
         _copy_type = "empty"
         if len(p) == 1:
-            _copy_type = "full"
+            _copy_type = target_copy_type
         l = p.pop(0)
-        if path[0] == "/":  # absolute path
+        if l == "":  # absolute path
             if self.get_parent() is not None:
-                return self.get_parent().create_path(source, path=path, target_copy_type=target_copy_type)
+                return self.get_parent().create_path(source, path=p, target_copy_type=target_copy_type)
             elif self.get_tag() == PathUtils.split_tag_and_key_values(p[0])[0]:
                 p.pop(0)
-                return self.create_path(source, path="/".join(p), target_copy_type=target_copy_type)
+                return self.create_path(source, path=p, target_copy_type=target_copy_type)
             _p = PathUtils.path_to_list(self.get_path())
             if p[0] == _p[1]:
                 p.pop(0)
-                return self.create_path(source, path="/".join(p), target_copy_type=target_copy_type)
+                return self.create_path(source, path=p, target_copy_type=target_copy_type)
             raise ValueError("Root tag not found in walk_path()")
         if l == "..":
-            return self.get_parent().create_path(source, path="/".join(p), target_copy_type=target_copy_type)
+            return self.get_parent().create_path(source, path=p, target_copy_type=target_copy_type)
         elif (l.find("[") > 0) and (l.find("]") > 0):
             attrib = l[0: l.find("[")]
             keystring = l[l.find("[") + 1: l.rfind("]")]
@@ -833,13 +835,13 @@ class Yang(object):
             if not (key in self.__dict__[attrib].keys()):
                 _yang = source.walk_path(self.get_path()).__dict__[attrib][key]
                 self.__dict__[attrib].add(_yang.copy(_copy_type))
-            return getattr(self, attrib)[key].create_path(source, path="/".join(p), target_copy_type=target_copy_type)
+            return getattr(self, attrib)[key].create_path(source, path=p, target_copy_type=target_copy_type)
         else:
             if (not (l in self.__dict__.keys())) or (getattr(self, l) is None):
                 _yang = getattr(source.walk_path(self.get_path()), l)
                 self.__dict__[l] = _yang.copy(_copy_type)
                 self.__dict__[l].set_parent(self)
-            return getattr(self, l).create_path(source, path="/".join(p), target_copy_type=target_copy_type)
+            return getattr(self, l).create_path(source, path=p, target_copy_type=target_copy_type)
         raise ValueError("Root tag not found in walk_path()")
 
     def walk_path(self, path, reference=None):
@@ -850,36 +852,34 @@ class Yang(object):
         """
         if type(path) is Leafref:
             return self.walk_path(path.data)
-
-        if path == "":
-            return self
-
         if type(path) in (list, tuple):
             p = path
         else:
             p = PathUtils.path_to_list(path)
+        if len(p) < 1:
+            return self
         l = p.pop(0)
-        if path[0] == "/":  # absolute path
+        if l == "":  # absolute path
             if self.get_parent() is not None:
                 return self.get_parent().walk_path(path, reference)
             if self.get_tag() == PathUtils.split_tag_and_key_values(p[0])[0]:
                 p.pop(0)
-                return self.walk_path("/".join(p), reference)
+                return self.walk_path(p, reference)
             _p = PathUtils.path_to_list(self.get_path())
             if p[0] == _p[1]:
                 p.pop(0)
-                return self.walk_path("/".join(p), reference)
+                return self.walk_path(p, reference)
             # entry not in the current tree, let's try the reference tree
             if reference is not None:
                 try:
                     yng = reference.walk_path(self.get_path(), reference=None)
-                    return yng.walk_path("/".join(p), reference=None)
+                    return yng.walk_path(p, reference=None)
                 except:
                     # path does not exist in the reference tree raise exception
                     raise ValueError("in walk_path(): Root tag not found neither in the current nor in the reference tree")
             # raise ValueError("Root tag not found in walk_path()")
         if l == "..":
-            return self.get_parent().walk_path("/".join(p), reference)
+            return self.get_parent().walk_path(p, reference)
         else:
             if (l.find("[") > 0) and (l.find("]") > 0):
                 attrib = l[0: l.find("[")]
@@ -891,15 +891,15 @@ class Yang(object):
                     key.append(v[1])
                 if len(key) == 1:
                     if key[0] in self.__dict__[attrib].keys():
-                        return getattr(self, attrib)[key[0]].walk_path("/".join(p), reference)
+                        return getattr(self, attrib)[key[0]].walk_path(p, reference)
                     elif reference is not None:
                         yng = reference.walk_path(self.get_path(), reference=None)
                         return yng.walk_path(l + "/" + "/".join(p), reference=None)
                 elif key in self.__dict__[attrib].keys():
-                   return getattr(self, attrib)[key].walk_path("/".join(p), reference)
+                   return getattr(self, attrib)[key].walk_path(p, reference)
             else:
                 if (l in self.__dict__.keys()) and (getattr(self, l) is not None):
-                    return getattr(self, l).walk_path("/".join(p), reference)
+                    return getattr(self, l).walk_path(p, reference)
                 elif reference is not None:
                     path = self.get_path()
                     yng = reference.walk_path(path, reference=None)
@@ -1266,7 +1266,7 @@ class Yang(object):
 
     def __merge__(self, source, execute=False):
         """
-        Common recursive functionaltify for merge() and patch() methods. Execute defines if operation is copied or executed.
+        Common recursive function for merge() and patch() methods. Execute defines if operation is copied or executed.
         :param source: instance of Yang
         :param execute: True - operation is executed; False - operation is copied
         :return: -
@@ -1319,9 +1319,15 @@ class Yang(object):
         dst.set_operation(None, recursive=True, force=True)
 
     def copy(self, copy_type=None):
-
-        if (copy_type is None) or (copy_type == 'full'):
+        """
+        Wrapper method for copying yang subtree
+        :param copy_type: full|yang|empty, default is full
+        :return: yang object
+        """
+        if (copy_type is None) or (copy_type == "full"):
             return self.full_copy()
+        elif copy_type == 'yang':
+            return self.yang_copy()
         else:
             return self.empty_copy()
 
@@ -2171,7 +2177,7 @@ class Leafref(StringLeaf):
                         self.target = self.walk_path(self.data)
                 except (ValueError):
                     if reference is not None:
-                        self.create_path(source=reference, path=self.data, target_copy_type='full')
+                        self.create_path(source=reference, path=self.data, target_copy_type="yang")
                         self.target = self.walk_path(self.data)
                     else:
                         raise
