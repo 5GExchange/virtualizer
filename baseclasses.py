@@ -1,4 +1,3 @@
-
 #    Yang baseclasses for the pyang plugin (PNC) developed at Ericsson Hungary Ltd.
 #    Authors: Robert Szabo, Balazs Miriszlai, Akos Recse, Raphael Vicente Rosa
 #    Credits: Robert Szabo, Raphael Vicente Rosa, David Jocha, Janos Elek, Balazs Miriszlai, Akos Recse
@@ -1305,9 +1304,11 @@ class Yang(object):
             if k is not "_parent":
                 if k not in self.__dict__.keys():
                     if not (execute and source.has_operation(('delete', 'remove'))):
-                        self.__dict__[k] = copy.deepcopy(v)
                         if isinstance(v, Yang):
+                            self.__dict__[k] = v.full_copy()
                             self.__dict__[k].set_parent(self)
+                        else:
+                            self.__dict__[k] = copy.deepcopy(v)
                 else:
                     if isinstance(v, Yang):
                         if isinstance(self.__dict__[k], Yang):
@@ -1361,13 +1362,19 @@ class Yang(object):
         return result
 
 
-    def full_copy(self):
+    def full_copy(self, memo=None):
         """
         Performs deepcopy of instance of Yang
         :param: -
         :return: instance copy (of Yang)
         """
-        return copy.deepcopy(self)
+        if memo is None:
+            memo = {}
+        if self._parent is not None:
+            memo[id(self._parent)] = None
+        result = copy.deepcopy(self, memo)
+        result._parent = None
+        return result
 
     def full_copy_subtree(self):
         """
@@ -1376,11 +1383,12 @@ class Yang(object):
         :return: instance copy (of Yang)
         """
         # let's save the parent
-        _parent = self._parent
-        self._parent = None  # to avoid upstream copying
-        _subtree = copy.deepcopy(self)
-        self._parent = _parent
-        return _subtree
+        return self.full_copy()
+        # _parent = self._parent
+        # self._parent = None  # to avoid upstream copying
+        # _subtree = copy.deepcopy(self)
+        # self._parent = _parent
+        # return _subtree
 
     def yang_copy(self, parent=None):
         cls = self.__class__
@@ -1396,6 +1404,21 @@ class Yang(object):
             setattr(result, k, copy.deepcopy(self.__dict__[k]))
         for k in self._leaf_attributes:
             setattr(result, k, copy.deepcopy(self.__dict__[k]))
+        return result
+
+    def __deepcopy__(self, memo, ignore_list = []):
+        # if id(self) in memo.keys():
+        #     return memo[id(self)]  # object seen
+        # ignore_list.append("_parent")
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        if self._parent is not None:
+            if id(self._parent) not in memo.keys():
+                raise ValueError("Object: {self} parent is outside of the yang tree".format(self=str(self)))
+        for k, v in self.__dict__.items():
+            if k not in ignore_list:
+                setattr(result, k, copy.deepcopy(v, memo))
         return result
 
 
@@ -2037,6 +2060,12 @@ class Leafref(StringLeaf):
         # super call calls set_value()
         super(Leafref, self).__init__(tag, parent=parent, value=value, mandatory=mandatory)
         self._leaf_attributes.append('target')
+
+    def __deepcopy__(self, memo):
+        result = super(Leafref, self).__deepcopy__(memo, ignore_list=['target'])
+        result.target = None
+        return result
+
 
     def __translate_and_merge__(self, translator, destination, path_caches=None, execute=False):
         """
@@ -2877,7 +2906,7 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         for item in source.keys():
             if item not in self.keys():
                 if not (execute and source.has_operation(('delete', 'remove'))):
-                    self.add(copy.deepcopy(source[item]))  # it should be a full_copy()
+                    self.add(source[item].full_copy())
             else:
                 if isinstance(self[item], Yang) and type(self[item]) == type(source[item]):
                     # self[item].set_operation(target[item].get_operation())
