@@ -853,7 +853,11 @@ class Yang(object):
                 return getattr(self, l).create_path(source, path=p, target_copy_type=target_copy_type)
             raise ValueError("Root tag not found in walk_path()")
         except Exception as e:
-            logger.error("CreatePath: attrib={} path={} at\n{}".format(l, '/'.join(p),self))
+            try:
+                logger.error("CreatePath: attrib={} path={} at\n{}".format(l, '/'.join(p),self))
+            except:
+                pass
+        finally:
             raise e
 
 
