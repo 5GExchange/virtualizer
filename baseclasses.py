@@ -1139,7 +1139,7 @@ class Yang(object):
         if recursive:
             for k, v in self.__dict__.items():
                 if isinstance(v, Yang) and k is not "_parent":
-                    v.set_operation(operation, recursive=recursive, force=force)
+                    v.set_operation(operation, recursive=recursive, force=force, execute=execute)
 
     def replace_operation(self, fromop, toop, recursive=True):
         """
@@ -1339,8 +1339,8 @@ class Yang(object):
         :return: -
         """
         dst = self.create_path(source)
-        dst.__merge__(source, True)
-        dst.set_operation(None, recursive=True, force=True)
+        dst.__merge__(source, execute=True)
+        dst.set_operation(None, recursive=True, force=True, execute=True)
 
     def copy(self, copy_type=None):
         """
@@ -2950,7 +2950,10 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
         """
         # super(ListYang, self).set_operation(operation, recursive=recursive, force=force)
         for key in self._data.keys():
-            self._data[key].set_operation(operation, recursive=recursive, force=force)
+            if execute and self._data[key].has_operation(('delete', 'remove')):
+                del self._data[key]
+            else:
+                self._data[key].set_operation(operation, recursive=recursive, force=force, execute=execute)
 
     def replace_operation(self, fromop, toop, recursive=True):
         """
