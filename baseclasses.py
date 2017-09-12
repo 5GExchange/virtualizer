@@ -857,8 +857,8 @@ class Yang(object):
                 logger.error("CreatePath: attrib={} path={} at\n{}".format(l, '/'.join(p),self))
             except:
                 pass
-        finally:
-            raise e
+            finally:
+                raise e
 
 
     def walk_path(self, path, reference=None):
