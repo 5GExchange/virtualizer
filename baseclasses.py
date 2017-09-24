@@ -1798,7 +1798,7 @@ class StringLeaf(Leaf):
             return default
         if type(self.data) == ET:
             return ET.tostring(self.data, encoding="us-ascii", method="text")
-        return self.data
+        return super(StringLeaf, self).get_as_text()
 
     def set_value(self, value):
         """
