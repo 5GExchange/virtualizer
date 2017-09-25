@@ -65,6 +65,11 @@ module virtualizer {
       type string;
       mandatory false;
     }
+    leaf qos {
+      description "Traffic QoS class, e.g., DiffServ BE, EF, AF,...";
+      type string;
+      mandatory false;
+    }
   }
 
   grouping object {

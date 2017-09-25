@@ -1,4 +1,4 @@
-#    Filename: virtualizer.py		 Created: 2017-06-28  10:35:34
+#    Filename: virtualizer.py		 Created: 2017-09-25  14:34:30
 #    This file was automatically created by a pyang plugin (PNC) developed at Ericsson Hungary Ltd., 2015
 #    Authors: Robert Szabo, Balazs Miriszlai, Akos Recse, Raphael Vicente Rosa
 #    Credits: Robert Szabo, Raphael Vicente Rosa, David Jocha, Janos Elek, Balazs Miriszlai, Akos Recse
@@ -79,9 +79,9 @@ class GroupingMetadata(Yang):
 
 # YANG construct: grouping link-resource
 class GroupingLink_resource(Yang):
-    def __init__(self, tag, parent=None, delay=None, bandwidth=None, cost=None):
+    def __init__(self, tag, parent=None, delay=None, bandwidth=None, cost=None, qos=None):
         super(GroupingLink_resource, self).__init__(tag, parent)
-        self._sorted_children = ["delay", "bandwidth", "cost"]
+        self._sorted_children = ["delay", "bandwidth", "cost", "qos"]
         # yang construct: leaf
         self.delay = StringLeaf("delay", parent=self, value=delay)
         """:type: StringLeaf"""
@@ -90,6 +90,9 @@ class GroupingLink_resource(Yang):
         """:type: StringLeaf"""
         # yang construct: leaf
         self.cost = StringLeaf("cost", parent=self, value=cost)
+        """:type: StringLeaf"""
+        # yang construct: leaf
+        self.qos = StringLeaf("qos", parent=self, value=qos)
         """:type: StringLeaf"""
 
 
@@ -522,9 +525,9 @@ class PortSap_data(Yang):
 # YANG construct: container resources
 class PortSap_dataResources(GroupingLink_resource):
     """Only used for domain boundary ports (port-sap type), where this is used to derive interconnection link characteristics."""
-    def __init__(self, tag="resources", parent=None, delay=None, bandwidth=None, cost=None):
-        GroupingLink_resource.__init__(self, tag, parent, delay, bandwidth, cost)
-        self._sorted_children = ["delay", "bandwidth", "cost"]
+    def __init__(self, tag="resources", parent=None, delay=None, bandwidth=None, cost=None, qos=None):
+        GroupingLink_resource.__init__(self, tag, parent, delay, bandwidth, cost, qos)
+        self._sorted_children = ["delay", "bandwidth", "cost", "qos"]
 
 
 # YANG construct: container control
@@ -571,9 +574,9 @@ class PortAddresses(Yang):
 
 # YANG construct: container resources
 class Link_resource(GroupingLink_resource):
-    def __init__(self, tag="resources", parent=None, delay=None, bandwidth=None, cost=None):
-        GroupingLink_resource.__init__(self, tag, parent, delay, bandwidth, cost)
-        self._sorted_children = ["delay", "bandwidth", "cost"]
+    def __init__(self, tag="resources", parent=None, delay=None, bandwidth=None, cost=None, qos=None):
+        GroupingLink_resource.__init__(self, tag, parent, delay, bandwidth, cost, qos)
+        self._sorted_children = ["delay", "bandwidth", "cost", "qos"]
 
 
 # YANG construct: container constraints
