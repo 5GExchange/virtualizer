@@ -2344,7 +2344,8 @@ class ListedYang(Yang):
             if k not in dst._key_attributes:
                 if dst.__dict__[k] is None:
                     dst.create_from_path(k)
-                self.__dict__[k].__translate_and_merge__(translator, dst.__dict__[k], path_caches=path_caches, execute=execute)
+                if self.__dict__[k] is not None:
+                    self.__dict__[k].__translate_and_merge__(translator, dst.__dict__[k], path_caches=path_caches, execute=execute)
 
         if execute:
             dst.set_operation(None, recursive=False)
