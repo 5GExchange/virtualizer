@@ -754,7 +754,7 @@ class Yang(object):
         :param path: string, path to create
         :return: Yang, Yang object at the source instance's / path's path
         """
-        if path == "":
+        if path == "" or len(path) == 0:
             return self
         if type(path) in (list, tuple):
             p = path
@@ -2328,9 +2328,10 @@ class ListedYang(Yang):
         :return: -
         """
 
+        _delete = self.has_operation(('delete', 'remove'))
         dst_path = translator.get_target_path(self.get_path(path_caches['src']))
         dst = destination.create_from_path(dst_path)
-        if execute and self.has_operation(('delete', 'remove')):
+        if execute and _delete:
             if isinstance(dst, Leaf):
                 dst.clear_data()
             else:
@@ -2342,14 +2343,19 @@ class ListedYang(Yang):
 
         for k in self._sorted_children:
             if k not in dst._key_attributes:
-                if dst.__dict__[k] is None:
-                    dst.create_from_path(k)
-                self.__dict__[k].__translate_and_merge__(translator, dst.__dict__[k], path_caches=path_caches, execute=execute)
+                if _delete:
+                    if dst.__dict__[k] is not None:
+                        dst.__dict__[k].delete()
+                else:
+                    if dst.__dict__[k] is None:
+                        dst.create_from_path(k)
+                    if self.__dict__[k] is not None:
+                        self.__dict__[k].__translate_and_merge__(translator, dst.__dict__[k], path_caches=path_caches, execute=execute)
 
         if execute:
             dst.set_operation(None, recursive=False)
         else:
-            dst.set_operation(self)
+            dst.set_operation(self, recursive=False)
 
         return dst
 
