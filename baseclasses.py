@@ -1263,9 +1263,10 @@ class Yang(object):
         :return: yang: destination object
         """
 
+        _delete = self.has_operation(('delete', 'remove'))
         dst_path = translator.get_target_path(self.get_path(path_caches['src']))
         dst = destination.create_from_path(dst_path)
-        if execute and self.has_operation(('delete', 'remove')):
+        if execute and _delete:
             if isinstance(dst, Leaf):
                 dst.clear_data()
             else:
@@ -1276,9 +1277,13 @@ class Yang(object):
             return dst
 
         for k in self._sorted_children:
-            if dst.__dict__[k] is None:
-                dst.create_from_path(k)
-            self.__dict__[k].__translate_and_merge__(translator, dst.__dict__[k], path_caches=path_caches, execute=execute)
+            if _delete:
+                if dst.__dict__[k] is not None:
+                    dst.__dict__[k].delete()
+            elif self.__dict__[k] is not None:
+                if dst.__dict__[k] is None:
+                    dst.create_from_path(k)
+                self.__dict__[k].__translate_and_merge__(translator, dst.__dict__[k], path_caches=path_caches, execute=execute)
 
         if execute:
             dst.set_operation(None, recursive=False)
@@ -2346,11 +2351,10 @@ class ListedYang(Yang):
                 if _delete:
                     if dst.__dict__[k] is not None:
                         dst.__dict__[k].delete()
-                else:
+                elif self.__dict__[k] is not None:
                     if dst.__dict__[k] is None:
                         dst.create_from_path(k)
-                    if self.__dict__[k] is not None:
-                        self.__dict__[k].__translate_and_merge__(translator, dst.__dict__[k], path_caches=path_caches, execute=execute)
+                    self.__dict__[k].__translate_and_merge__(translator, dst.__dict__[k], path_caches=path_caches, execute=execute)
 
         if execute:
             dst.set_operation(None, recursive=False)
