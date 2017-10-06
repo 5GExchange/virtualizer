@@ -68,8 +68,9 @@ module: virtualizer
       |     |  |  +--rw id        string
       |     |  |  +--rw object?   -> 
       |     |  +--rw constraint* [id]
-      |     |     +--rw id         string
-      |     |     +--rw formula?   string
+      |     |  |  +--rw id         string
+      |     |  |  +--rw formula?   string
+      |     |  +--rw restorability?   string
       |     +--rw metadata* [key]
       |     |  +--rw key      string
       |     |  +--rw value?   string
@@ -139,8 +140,9 @@ module: virtualizer
       |     |     |  |  +--rw id        string
       |     |     |  |  +--rw object?   -> 
       |     |     |  +--rw constraint* [id]
-      |     |     |     +--rw id         string
-      |     |     |     +--rw formula?   string
+      |     |     |  |  +--rw id         string
+      |     |     |  |  +--rw formula?   string
+      |     |     |  +--rw restorability?   string
       |     |     +--rw metadata* [key]
       |     |        +--rw key      string
       |     |        +--rw value?   string
@@ -211,8 +213,9 @@ module: virtualizer
       |     |        |  |  +--rw id        string
       |     |        |  |  +--rw object?   -> 
       |     |        |  +--rw constraint* [id]
-      |     |        |     +--rw id         string
-      |     |        |     +--rw formula?   string
+      |     |        |  |  +--rw id         string
+      |     |        |  |  +--rw formula?   string
+      |     |        |  +--rw restorability?   string
       |     |        +--rw metadata* [key]
       |     |           +--rw key      string
       |     |           +--rw value?   string
@@ -241,8 +244,9 @@ module: virtualizer
       |              |  +--rw id        string
       |              |  +--rw object?   -> 
       |              +--rw constraint* [id]
-      |                 +--rw id         string
-      |                 +--rw formula?   string
+      |              |  +--rw id         string
+      |              |  +--rw formula?   string
+      |              +--rw restorability?   string
       +--rw links
       |  +--rw link* [id]
       |     +--rw id           string

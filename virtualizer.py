@@ -1,4 +1,4 @@
-#    Filename: virtualizer.py		 Created: 2017-09-25  14:34:30
+#    Filename: virtualizer.py		 Created: 2017-10-06  10:21:17
 #    This file was automatically created by a pyang plugin (PNC) developed at Ericsson Hungary Ltd., 2015
 #    Authors: Robert Szabo, Balazs Miriszlai, Akos Recse, Raphael Vicente Rosa
 #    Credits: Robert Szabo, Raphael Vicente Rosa, David Jocha, Janos Elek, Balazs Miriszlai, Akos Recse
@@ -108,9 +108,9 @@ class GroupingObject(Yang):
 
 # YANG construct: grouping constraints
 class GroupingConstraints(Yang):
-    def __init__(self, tag, parent=None):
+    def __init__(self, tag, parent=None, restorability=None):
         super(GroupingConstraints, self).__init__(tag, parent)
-        self._sorted_children = ["affinity", "antiaffinity", "variable", "constraint"]
+        self._sorted_children = ["affinity", "antiaffinity", "variable", "constraint", "restorability"]
         # yang construct: list
         self.affinity = ListYang("affinity", parent=self, type=ConstraintsAffinity)
         """:type: ListYang(ConstraintsAffinity)"""
@@ -123,6 +123,10 @@ class GroupingConstraints(Yang):
         # yang construct: list
         self.constraint = ListYang("constraint", parent=self, type=ConstraintsConstraint)
         """:type: ListYang(ConstraintsConstraint)"""
+        # yang construct: leaf
+        self.restorability = StringLeaf("restorability", parent=self, value=restorability)
+        """:type: StringLeaf"""
+
 
 
 # YANG construct: grouping l3-address
@@ -581,9 +585,9 @@ class Link_resource(GroupingLink_resource):
 
 # YANG construct: container constraints
 class Constraints(GroupingConstraints):
-    def __init__(self, tag="constraints", parent=None):
-        GroupingConstraints.__init__(self, tag, parent)
-        self._sorted_children = ["affinity", "antiaffinity", "variable", "constraint"]
+    def __init__(self, tag="constraints", parent=None, restorability=None):
+        GroupingConstraints.__init__(self, tag, parent, restorability)
+        self._sorted_children = ["affinity", "antiaffinity", "variable", "constraint", "restorability"]
 
 
 # YANG construct: container flowtable

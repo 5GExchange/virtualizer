@@ -119,6 +119,10 @@ module virtualizer {
 	type string;
       }
     }
+    leaf restorability{
+      description "Delegated restoraton requirement, e.g., 500msec means that the receiving orchestrator may restore the service component within 500msec or must report failure otherwise";
+      type string;
+    }
   }
 
   grouping l3-address {
