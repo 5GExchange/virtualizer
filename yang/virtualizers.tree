@@ -23,6 +23,7 @@ module: virtualizers
       |  |     |     |     +--rw delay?       string
       |  |     |     |     +--rw bandwidth?   string
       |  |     |     |     +--rw cost?        string
+      |  |     |     |     +--rw qos?         string
       |  |     |     +--rw control
       |  |     |     |  +--rw controller?     string
       |  |     |     |  +--rw orchestrator?   string
@@ -49,6 +50,7 @@ module: virtualizers
       |  |     |        +--rw delay?       string
       |  |     |        +--rw bandwidth?   string
       |  |     |        +--rw cost?        string
+      |  |     |        +--rw qos?         string
       |  |     +--rw resources
       |  |     |  +--rw cpu        string
       |  |     |  +--rw mem        string
@@ -92,6 +94,7 @@ module: virtualizers
       |  |     |     |     |     +--rw delay?       string
       |  |     |     |     |     +--rw bandwidth?   string
       |  |     |     |     |     +--rw cost?        string
+      |  |     |     |     |     +--rw qos?         string
       |  |     |     |     +--rw control
       |  |     |     |     |  +--rw controller?     string
       |  |     |     |     |  +--rw orchestrator?   string
@@ -118,6 +121,7 @@ module: virtualizers
       |  |     |     |        +--rw delay?       string
       |  |     |     |        +--rw bandwidth?   string
       |  |     |     |        +--rw cost?        string
+      |  |     |     |        +--rw qos?         string
       |  |     |     +--rw resources
       |  |     |     |  +--rw cpu        string
       |  |     |     |  +--rw mem        string
@@ -162,6 +166,7 @@ module: virtualizers
       |  |     |        |     |     +--rw delay?       string
       |  |     |        |     |     +--rw bandwidth?   string
       |  |     |        |     |     +--rw cost?        string
+      |  |     |        |     |     +--rw qos?         string
       |  |     |        |     +--rw control
       |  |     |        |     |  +--rw controller?     string
       |  |     |        |     |  +--rw orchestrator?   string
@@ -188,6 +193,7 @@ module: virtualizers
       |  |     |        |        +--rw delay?       string
       |  |     |        |        +--rw bandwidth?   string
       |  |     |        |        +--rw cost?        string
+      |  |     |        |        +--rw qos?         string
       |  |     |        +--rw resources
       |  |     |        |  +--rw cpu        string
       |  |     |        |  +--rw mem        string
@@ -224,6 +230,7 @@ module: virtualizers
       |  |           |  +--rw delay?       string
       |  |           |  +--rw bandwidth?   string
       |  |           |  +--rw cost?        string
+      |  |           |  +--rw qos?         string
       |  |           +--rw constraints
       |  |              +--rw affinity* [id]
       |  |              |  +--rw id        string
@@ -247,6 +254,7 @@ module: virtualizers
       |  |        +--rw delay?       string
       |  |        +--rw bandwidth?   string
       |  |        +--rw cost?        string
+      |  |        +--rw qos?         string
       |  +--rw metadata* [key]
       |     +--rw key      string
       |     +--rw value?   string
