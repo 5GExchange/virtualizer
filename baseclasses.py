@@ -879,6 +879,8 @@ class Yang(object):
         if l == "":  # absolute path
             if self.get_parent() is not None:
                 return self.get_parent().walk_path(path, reference)
+            if len(p) == 0:
+                return self
             if self.get_tag() == PathUtils.split_tag_and_key_values(p[0])[0]:
                 p.pop(0)
                 return self.walk_path(p, reference)
