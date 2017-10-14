@@ -913,7 +913,8 @@ class Yang(object):
                         return getattr(self, attrib)[key[0]].walk_path(p, reference)
                     elif reference is not None:
                         yng = reference.walk_path(self.get_path(), reference=None)
-                        return yng.walk_path(l + "/" + "/".join(p), reference=None)
+                        p.insert(0, l)
+                        return yng.walk_path(p, reference=None)
                 elif key in self.__dict__[attrib].keys():
                    return getattr(self, attrib)[key].walk_path(p, reference)
             else:
@@ -922,7 +923,8 @@ class Yang(object):
                 elif reference is not None:
                     path = self.get_path()
                     yng = reference.walk_path(path, reference=None)
-                    return yng.walk_path(l + "/" + "/".join(p), reference=None)
+                    p.insert(0, l)
+                    return yng.walk_path(p, reference=None)
         raise ValueError("Path does not exist from {f} to {t}; yang tree={y}".format(f=self.get_path(), t=l+"/"+"/".join(p), y=self.html()))
 
     def get_rel_path(self, target):
@@ -1345,7 +1347,7 @@ class Yang(object):
         Method to process diff changeset, i.e., merge AND execute operations in the diff. For example, operation = delete removes the yang object.        :param diff: Yang
         :return: -
         """
-        dst = self.create_path(source)
+        dst = self.create_path(source, target_copy_type="empty")
         dst.__merge__(source, execute=True)
         dst.set_operation(None, recursive=True, force=True, execute=True)
 
@@ -1426,7 +1428,8 @@ class Yang(object):
         memo[id(self)] = result
         if self._parent is not None:
             if id(self._parent) not in memo.keys():
-                raise ValueError("Object: {self} parent is outside of the yang tree".format(self=str(self)))
+                raise ValueError("At {path} parent is outside of the yang tree; object:\n{self}\nparent:{parent}".format(
+                    path=self.get_path(), self=str(self), parent=str(self._parent)))
         for k, v in self.__dict__.items():
             if k not in ignore_list:
                 setattr(result, k, copy.deepcopy(v, memo))
