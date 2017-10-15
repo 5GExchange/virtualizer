@@ -648,7 +648,10 @@ class Yang(object):
             if k not in _ignores:
                 v = getattr(self, k)
                 vv = getattr(reference, k)
-                if type(v) == type(vv):
+                if self.has_operation(('delete', 'remove')):
+                    if v is not None:
+                        v.clear_data()
+                elif type(v) == type(vv):
                     if v.reduce(vv):
                         v.clear_data()
                     else:
@@ -1703,6 +1706,9 @@ class Leaf(Yang):
 
         if self.data is None:
             return True
+        if self.has_operation(("delete", "remove")):
+            self.data = None
+            return not self.has_operation(reference.get_operation())
         if isinstance(self.data, ET.Element):
             if ET.tostring(self.data) != ET.tostring(reference.data):
                 if not self.has_operation(("delete", "remove")):
