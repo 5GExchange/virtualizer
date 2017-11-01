@@ -1,20 +1,6 @@
-#    Filename: virtualizers.py		 Created: 2017-06-28  10:23:09
-#    This file was automatically created by a pyang plugin (PNC) developed at Ericsson Hungary Ltd., 2015
-#    Authors: Robert Szabo, Balazs Miriszlai, Akos Recse, Raphael Vicente Rosa
-#    Credits: Robert Szabo, Raphael Vicente Rosa, David Jocha, Janos Elek, Balazs Miriszlai, Akos Recse
-#    Contact: Robert Szabo <robert.szabo@ericsson.com>
-            
-#    Yang file info:
-#    Namespace: urn:unify:virtualizers
-#    Prefix: virtualizers
-#    Organization: ETH
-#    Contact: Robert Szabo <robert.szabo@ericsson.com>
-#    Description: Bind list added
-
-__copyright__ = "Copyright 2017, Ericsson Hungary Ltd."
-__license__ = "Apache License, Version 2.0"
-__version__ = "2016-10-30"
-
+# Copyright 2018 5G Exchange (5GEx) Project
+# Copyright 2016-2017 Ericsson Hungary Ltd.
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -26,6 +12,22 @@ __version__ = "2016-10-30"
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+#    Filename: virtualizers.py		 Created: 2017-06-28 10:23:09
+#    The original file was automatically created by a pyang plugin
+#    (PNC) developed at Ericsson Hungary Ltd., 2015
+
+#    Yang file info:
+#    Namespace: urn:unify:virtualizers
+#    Prefix: virtualizers
+#    Organization: 5GEx
+#    Description: Bind list added
+
+__author__ = "5GEx Consortium, Robert Szabo, Balazs Miriszlai, Akos Recse, Raphael Vicente Rosa"
+__copyright__ = "Copyright 2018 5G Exchange (5GEx) Project, Copyright 2016-2017 Ericsson Hungary Ltd."
+__credits__ = "Robert Szabo, Raphael Vicente Rosa, David Jocha, Janos Elek, Balazs Miriszlai, Akos Recse"
+__license__ = "Apache License, Version 2.0"
+__version__ = "2016-10-30"
 
 
 from baseclasses import *

@@ -3,8 +3,7 @@ module virtualizers {
   prefix "virtualizers";
   import virtualizer { prefix v; }
   
-  organization "ETH";
-  contact "Robert Szabo <robert.szabo@ericsson.com>";
+  organization "5GEx";
   
   revision "2016-10-30" {
     description "Bind list added";

@@ -1,20 +1,6 @@
-#    Filename: virtualizer_mappings.py		 Created: 2016-11-25  14:13:23
-#    This file was automatically created by a pyang plugin (PNC) developed at Ericsson Hungary Ltd., 2015
-#    Authors: Robert Szabo, Balazs Miriszlai, Akos Recse, Raphael Vicente Rosa
-#    Credits: Robert Szabo, Raphael Vicente Rosa, David Jocha, Janos Elek, Balazs Miriszlai, Akos Recse
-#    Contact: Robert Szabo <robert.szabo@ericsson.com>
-
-#    Yang file info:
-#    Namespace: urn:5gex:virtualizer_mappings
-#    Prefix: virtualizer_mappings
-#    Organization: ETH
-#    Contact: Robert Szabo <robert.szabo@ericsson.com>
-#    Description: Mapping resolution service for the virtualizer
-
-__copyright__ = "Copyright 2016, Ericsson Hungary Ltd."
-__license__ = "Apache License, Version 2.0"
-__version__ = "2016-11-19"
-
+# Copyright 2018 5G Exchange (5GEx) Project
+# Copyright 2016-2017 Ericsson Hungary Ltd.
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -26,6 +12,22 @@ __version__ = "2016-11-19"
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+#    Filename: virtualizer_mappings.py		 Created: 2016-11-25  14:13:23
+#    The original file was automatically created by a pyang plugin
+#    (PNC) developed at Ericsson Hungary Ltd., 2015
+
+#    Yang file info:
+#    Namespace: urn:5gex:virtualizer_mappings
+#    Prefix: virtualizer_mappings
+#    Organization: 5GEx
+#    Description: Mapping resolution service for the virtualizer
+
+__author__ = "5GEx Consortium, Robert Szabo, Balazs Miriszlai, Akos Recse, Raphael Vicente Rosa"
+__copyright__ = "Copyright 2018 5G Exchange (5GEx) Project, Copyright 2016-2017 Ericsson Hungary Ltd."
+__credits__ = "Robert Szabo, Raphael Vicente Rosa, David Jocha, Janos Elek, Balazs Miriszlai, Akos Recse"
+__license__ = "Apache License, Version 2.0"
+__version__ = "2016-11-19"
 
 
 from baseclasses import *

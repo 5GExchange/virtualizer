@@ -2,8 +2,7 @@ module virtualizer_mappings {
   namespace "urn:5gex:virtualizer_mappings";
   prefix "virtualizer_mappings";
 
-  organization "ETH";
-  contact "Robert Szabo <robert.szabo@ericsson.com>";
+  organization "5GEx";
 
   revision "2016-11-19" {
     description "Mapping resolution service for the virtualizer";
