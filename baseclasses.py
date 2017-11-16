@@ -1541,7 +1541,7 @@ class Yang(object):
 
 
     def diff(self, target):
-        diff = target.full_copy()
+        diff = target.yang_copy()
         diff._diff(self)
         return diff
 
