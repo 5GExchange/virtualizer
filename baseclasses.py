@@ -718,12 +718,21 @@ class Yang(object):
                 if isinstance(v, Yang):
                     v.delete()
 
-    def get_path(self, path_cache=None):
+    def get_path(self, path_cache=None, drop=0):
         """
         Returns the complete path (since the root) of the instance of Yang
         :param: -
         :return: string
         """
+        if drop > 0:
+            if self._parent is None:
+                raise ValueError("get_path cannot drop {drop} tails at {path}".format(drop=drop, path=self.get_path(path_cache=path_cache)))
+            return self._parent.get_path(path_cache=path_cache, drop=drop-1)
+
+        try:
+            return path_cache[self]  # if object is already in the cache
+        except:
+            pass
         if self._parent is not None:
             p = self._parent.get_path(path_cache=path_cache) + "/" + self.get_tag()
         elif not self._floating:
@@ -2437,12 +2446,16 @@ class ListedYang(Yang):
             return tuple(tags)
         return self.__dict__[self._key_attributes[0]].get_tag()
 
-    def get_path(self, path_cache=None):
+    def get_path(self, path_cache=None, drop=0):
         """
         Returns path of ListedYang based on tags and values of its components
         :param: path_cache: dictionary of yang object paths
         :return: string
         """
+        if drop > 0:
+            if self._parent is None:
+                raise ValueError("get_path cannot drop {drop} tails at {path}".format(drop=drop, path=self.get_path(path_cache=path_cache)))
+            return self._parent.get_path(path_cache=path_cache, drop=drop-1)
         try:
             return path_cache[self]  # if object is already in the cache
         except:
@@ -2782,12 +2795,17 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
             item = item.keys()
         return self._data.pop(item)
 
-    def get_path(self, path_cache=None):
+    def get_path(self, path_cache=None, drop=0):
         """
         Overides Yang method
         :param: -
         :return: upstream path
         """
+        if drop > 0:
+            if self._parent is None:
+                raise ValueError("get_path cannot drop {drop} tails at {path}".format(drop=drop, path=self.get_path(path_cache=path_cache)))
+            return self._parent.get_path(path_cache=path_cache, drop=drop-1)
+
         if self._parent is not None:
             p = self._parent.get_path(path_cache=path_cache)
         else:
