@@ -296,18 +296,18 @@ class Yang(object):
         self._leaf_attributes = list()
         self._floating = False  # get_path() will not return initial '/', i.e., only relative path is returned
 
-    def __setattr__(self, key, value):
-        """
-        Calls set_value() for Leaf types so that they behave like string, int etc...
-        :param key: string, attribute name
-        :param value: value of arbitrary type
-        :return: -
-        """
-        if (value is not None) and (key in self.__dict__) and issubclass(type(self.__dict__[key]),
-                                                                         Leaf) and not issubclass(type(value), Yang):
-            self.__dict__[key].set_value(value)
-        else:
-            self.__dict__[key] = value
+    # def __setattr__(self, key, value):
+    #     """
+    #     Calls set_value() for Leaf types so that they behave like string, int etc...
+    #     :param key: string, attribute name
+    #     :param value: value of arbitrary type
+    #     :return: -
+    #     """
+    #     if (value is not None) and (key in self.__dict__) and issubclass(type(self.__dict__[key]),
+    #                                                                      Leaf) and not issubclass(type(value), Yang):
+    #         self.__dict__[key].set_value(value)
+    #     else:
+    #         self.__dict__[key] = value
 
     def match_tags(self, tags):
         if tags is None:
@@ -1551,7 +1551,7 @@ class Yang(object):
 
 
     def diff(self, target):
-        diff = target.full_copy()
+        diff = target.yang_copy()
         diff._diff(self)
         return diff
 
@@ -1578,6 +1578,21 @@ class Leaf(Yang):
         self.units = ""
         """:type: string"""
         self._leaf_attributes.extend(['data', 'mandatory'])
+
+    def __setattr__(self, key, value):
+        """
+        Calls set_value() for Leaf types so that they behave like string, int etc...
+        :param key: string, attribute name
+        :param value: value of arbitrary type
+        :return: -
+        """
+        if (value is not None) and (key in self.__dict__) and issubclass(type(self.__dict__[key]),
+                                                                             Leaf) and not issubclass(type(value), Yang):
+            self.__dict__[key].set_value(value)
+        else:
+            self.__dict__[key] = value
+
+
 
     def __translate_and_merge__(self, translator, destination, path_caches=None, execute=False):
         """
