@@ -51,7 +51,7 @@ DEFAULT = object()
 
 __IGNORED_ATTRIBUTES__ =    ("_parent", "_tag", "_sorted_children", "_referred", "_key_attributes", "_sh")
 __EQ_IGNORED_ATTRIBUTES__ = ("_parent", "_sorted_children", "_referred", "_key_attributes", "_floating")
-__YANG_COPY_ATTRIBUTES__ =  ("_tag", "_sorted_children", "_operation", "_attributes", "_leaf_attributes", "_floating")
+__YANG_COPY_ATTRIBUTES__ =  ("_tag", "_sorted_children", "_operation", "_attributes", "_floating")
 
 __REDUCE_ATTRIBUTES__ = ("")
 
@@ -296,7 +296,7 @@ class Yang(object):
         self._referred = []  # to hold leafref references for backward search
         self._sorted_children = []  # to hold children Yang list
         self._attributes = ['_operation']
-        self._leaf_attributes = list()
+        # self._leaf_attributes = list()
         self._floating = False  # get_path() will not return initial '/', i.e., only relative path is returned
 
     # def __setattr__(self, key, value):
@@ -1431,11 +1431,6 @@ class Yang(object):
                 setattr(result, k, self.__dict__[k])
         for k in __YANG_COPY_ATTRIBUTES__:
             setattr(result, k, copy.deepcopy(self.__dict__[k]))
-        for k in self._leaf_attributes:
-            if isinstance(self, Leafref) and k == "target":
-                setattr(result, k, self.__dict__[k].yang_copy(result))
-            else:
-                setattr(result, k, copy.deepcopy(self.__dict__[k]))
         return result
 
     def __deepcopy__(self, memo, ignore_list = []):
@@ -1587,7 +1582,14 @@ class Leaf(Yang):
         """:type: boolean"""
         self.units = ""
         """:type: string"""
-        self._leaf_attributes.extend(['data', 'mandatory'])
+        self._leaf_attributes = ['data', 'mandatory', 'units', '_leaf_attributes']
+
+    def yang_copy(self, parent=None):
+        result = super(Leaf, self).yang_copy(parent)
+        for k in self._leaf_attributes:
+            setattr(result, k, copy.deepcopy(self.__dict__[k]))
+        return result
+
 
     def __setattr__(self, key, value):
         """
@@ -1817,7 +1819,7 @@ class StringLeaf(Leaf):
         """:type: string"""
         self.set_mandatory(mandatory)  # FIXME: Mandatory should be handled in the Leaf class!
         """:type: boolean"""
-        self._leaf_attributes.extend(['units'])
+        # self._leaf_attributes.extend(['units'])
 
     def parse(self, root):
         """
@@ -2114,7 +2116,13 @@ class Leafref(StringLeaf):
         """:type: Yang"""
         # super call calls set_value()
         super(Leafref, self).__init__(tag, parent=parent, value=value, mandatory=mandatory)
-        self._leaf_attributes.append('target')
+        # commented to avoid copying
+        # self._leaf_attributes.append('target')
+
+    def yang_copy(self, parent=None):
+        result = super(Leafref, self).yang_copy(parent)
+        result.target = None
+        return result
 
     def __deepcopy__(self, memo):
         result = super(Leafref, self).__deepcopy__(memo, ignore_list=['target'])
