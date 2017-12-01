@@ -280,6 +280,9 @@ class YangJson:
         _json = json.dumps(_dict, indent=4, sort_keys=ordered)
         return _json
 
+# Custom Exceptions
+class YangCopyDifferentParent(Exception):
+    pass
 
 class Yang(object):
     """
@@ -1436,18 +1439,22 @@ class Yang(object):
         # if id(self) in memo.keys():
         #     return memo[id(self)]  # object seen
         # ignore_list.append("_parent")
-        cls = self.__class__
-        result = cls.__new__(cls)
-        memo[id(self)] = result
-        if self._parent is not None:
-            if id(self._parent) not in memo.keys():
-                raise ValueError("At {path} parent is outside of the yang tree; object:\n{self}\nparent:{parent}".format(
-                    path=self.get_path(), self=str(self), parent=str(self._parent)))
-        for k, v in self.__dict__.items():
-            if k not in ignore_list:
-                setattr(result, k, copy.deepcopy(v, memo))
-        return result
-
+        try:
+            cls = self.__class__
+            result = cls.__new__(cls)
+            memo[id(self)] = result
+            if self._parent is not None:
+                if id(self._parent) not in memo.keys():
+                    logger.error("Parent Error Stack: " + self.get_path())
+                    raise YangCopyDifferentParent("At {path} parent is outside of the yang tree; object:\n{self}\nparent:{parent}".format(
+                        path=self.get_path(), self=str(self), parent=str(self._parent)))
+            for k, v in self.__dict__.items():
+                if k not in ignore_list:
+                    setattr(result, k, copy.deepcopy(v, memo))
+            return result
+        except YangCopyDifferentParent as e:
+            logger.error("Parent Error Stack: " + self.get_path())
+            raise e
 
     def delete(self):  # FIXME: if referred by a LeafRef?
         """
@@ -2110,7 +2117,6 @@ class Leafref(StringLeaf):
         result = super(Leafref, self).__deepcopy__(memo, ignore_list=['target'])
         result.target = None
         return result
-
 
     def __translate_and_merge__(self, translator, destination, path_caches=None, execute=False):
         """
