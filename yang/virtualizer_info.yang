@@ -1,8 +1,7 @@
 module virtualizer_info {
   namespace "urn:unify:virtualizer_info";
   prefix "virtualizer_info";
-  organization "ETH";
-  contact "Robert Szabo <robert.szabo@ericsson.com>";
+  organization "5GEx";
 
   revision "2016-10-09" {
     description "Monitoring support for the virtualizer";

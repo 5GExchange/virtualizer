@@ -1,21 +1,6 @@
-#    Filename: virtualizer.py		 Created: 2017-10-06  10:21:17
-#    This file was automatically created by a pyang plugin (PNC) developed at Ericsson Hungary Ltd., 2015
-#    Authors: Robert Szabo, Balazs Miriszlai, Akos Recse, Raphael Vicente Rosa
-#    Credits: Robert Szabo, Raphael Vicente Rosa, David Jocha, Janos Elek, Balazs Miriszlai, Akos Recse
-#    Contact: Robert Szabo <robert.szabo@ericsson.com>
-            
-#    Yang file info:
-#    Namespace: urn:unify:virtualizer
-#    Prefix: virtualizer
-#    Organization: ETH
-#    Contact: Robert Szabo <robert.szabo@ericsson.com>
-#    Description: V5.0: Groupping of construct for virtualizer to enable virtualizers
-#				  zone attribute introduced for embedding
-
-__copyright__ = "Copyright 2017, Ericsson Hungary Ltd."
-__license__ = "Apache License, Version 2.0"
-__version__ = "2016-07-08"
-
+# Copyright 2018 5G Exchange (5GEx) Project
+# Copyright 2016-2017 Ericsson Hungary Ltd.
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -27,6 +12,23 @@ __version__ = "2016-07-08"
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+#    Filename: virtualizer.py		 Created: 2017-10-06  10:21:17
+#    The original file was automatically created by a pyang plugin
+#    (PNC) developed at Ericsson Hungary Ltd., 2015
+
+#    Yang file info:
+#    Namespace: urn:unify:virtualizer
+#    Prefix: virtualizer
+#    Organization: 5GEx
+#    Description: V5.0: Groupping of construct for virtualizer to enable virtualizers
+#				  zone attribute introduced for embedding
+
+__author__ = "5GEx Consortium, Robert Szabo, Balazs Miriszlai, Akos Recse, Raphael Vicente Rosa"
+__copyright__ = "Copyright 2018 5G Exchange (5GEx) Project, Copyright 2016-2017 Ericsson Hungary Ltd."
+__credits__ = "Robert Szabo, Raphael Vicente Rosa, David Jocha, Janos Elek, Balazs Miriszlai, Akos Recse"
+__license__ = "Apache License, Version 2.0"
+__version__ = "2016-07-08"
 
 
 from baseclasses import *

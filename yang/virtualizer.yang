@@ -1,8 +1,7 @@
 module virtualizer {
   namespace "urn:unify:virtualizer";
   prefix "virtualizer";
-  organization "ETH";
-  contact "Robert Szabo <robert.szabo@ericsson.com>";
+  organization "5GEx";
 
   revision "2016-07-08" {
     description "V5.0: Groupping of construct for virtualizer to enable virtualizers; zone attribute introduced for embedding";
