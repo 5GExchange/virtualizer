@@ -1432,7 +1432,10 @@ class Yang(object):
         for k in __YANG_COPY_ATTRIBUTES__:
             setattr(result, k, copy.deepcopy(self.__dict__[k]))
         for k in self._leaf_attributes:
-            setattr(result, k, copy.deepcopy(self.__dict__[k]))
+            if isinstance(self, Leafref) and k == "target":
+                setattr(result, k, self.__dict__[k].yang_copy(result))
+            else:
+                setattr(result, k, copy.deepcopy(self.__dict__[k]))
         return result
 
     def __deepcopy__(self, memo, ignore_list = []):
