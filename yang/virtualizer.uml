@@ -1,0 +1,203 @@
+'Download plantuml from http://plantuml.sourceforge.net/ 
+'Generate png with java -jar plantuml.jar <file> 
+'Output in img/<module>.png 
+'If Java spits out memory error increase heap size with java -Xmx1024m  -jar plantuml.jar <file> 
+@startuml img/virtualizer.png 
+hide empty fields 
+hide empty methods 
+hide <<case>> circle
+hide <<augment>> circle
+hide <<choice>> circle
+hide <<leafref>> stereotype
+hide <<leafref>> circle
+page 1x1 
+Title virtualizer 
+note top of virtualizer_virtualizer : <b>Namespace: </b> urn:unify:virtualizer \n<b>Prefix: </b> virtualizer \n<b>Organization : </b>\nETH \n<b>Contact : </b>\nRobert Szabo <robert.szabo@ericsson.com> \n<b>Revision : </b> 2016-07-08 \n
+package "virtualizer:virtualizer" as virtualizer_virtualizer { 
+class "virtualizer" as virtualizer << (M, #33CCFF) module>> 
+class "id-name" as virtualizer_I_id_name_grouping <<(G,Lime) grouping>> 
+virtualizer_I_id_name_grouping : id : string  
+virtualizer_I_id_name_grouping : name : string  
+class "id-name-type" as virtualizer_I_id_name_type_grouping <<(G,Lime) grouping>> 
+virtualizer_I_id_name_type_grouping : id-name {uses} 
+virtualizer_I_id_name_type_grouping : type : string  
+class "metadata" as virtualizer_I_metadata_grouping <<(G,Lime) grouping>> 
+class "metadata" as virtualizer_I_metadata_I_metadata << (L, #FF7700) list>> 
+virtualizer_I_metadata_grouping *-- "0..N" virtualizer_I_metadata_I_metadata 
+virtualizer_I_metadata_I_metadata : +key : string  {key}  {mandatory}
+virtualizer_I_metadata_I_metadata : value : string  
+class "link-resource" as virtualizer_I_link_resource_grouping <<(G,Lime) grouping>> 
+virtualizer_I_link_resource_grouping : delay : string  
+virtualizer_I_link_resource_grouping : bandwidth : string  
+virtualizer_I_link_resource_grouping : cost : string  
+virtualizer_I_link_resource_grouping : qos : string  
+class "object" as virtualizer_I_object_grouping <<(G,Lime) grouping>> 
+virtualizer_I_object_grouping : object : string  
+class "constraints" as virtualizer_I_constraints_grouping <<(G,Lime) grouping>> 
+class "affinity" as virtualizer_I_constraints_I_affinity << (L, #FF7700) list>> 
+virtualizer_I_constraints_grouping *-- "0..N" virtualizer_I_constraints_I_affinity 
+virtualizer_I_constraints_I_affinity : +id : string  {key}  {mandatory}
+virtualizer_I_constraints_I_affinity : object {uses} 
+class "antiaffinity" as virtualizer_I_constraints_I_antiaffinity << (L, #FF7700) list>> 
+virtualizer_I_constraints_grouping *-- "0..N" virtualizer_I_constraints_I_antiaffinity 
+virtualizer_I_constraints_I_antiaffinity : +id : string  {key}  {mandatory}
+virtualizer_I_constraints_I_antiaffinity : object {uses} 
+class "variable" as virtualizer_I_constraints_I_variable << (L, #FF7700) list>> 
+virtualizer_I_constraints_grouping *-- "0..N" virtualizer_I_constraints_I_variable 
+virtualizer_I_constraints_I_variable : +id : string  {key}  {mandatory}
+virtualizer_I_constraints_I_variable : object {uses} 
+class "constraint" as virtualizer_I_constraints_I_constraint << (L, #FF7700) list>> 
+virtualizer_I_constraints_grouping *-- "0..N" virtualizer_I_constraints_I_constraint 
+virtualizer_I_constraints_I_constraint : +id : string  {key}  {mandatory}
+virtualizer_I_constraints_I_constraint : formula : string  
+virtualizer_I_constraints_grouping : restorability : string  
+class "l3-address" as virtualizer_I_l3_address_grouping <<(G,Lime) grouping>> 
+virtualizer_I_l3_address_grouping : id-name {uses} 
+virtualizer_I_l3_address_grouping : configure : string  
+virtualizer_I_l3_address_grouping : client : string  
+virtualizer_I_l3_address_grouping : requested : string  
+virtualizer_I_l3_address_grouping : provided : string  
+class "port" as virtualizer_I_port_grouping <<(G,Lime) grouping>> 
+virtualizer_I_port_grouping : id-name {uses} 
+virtualizer_I_port_grouping : port_type : string  
+virtualizer_I_port_grouping : capability : string  
+virtualizer_I_port_grouping : sap : string  
+class "sap_data" as  virtualizer_I_port_I_sap_data <<container>> 
+virtualizer_I_port_grouping *-- "1" virtualizer_I_port_I_sap_data 
+virtualizer_I_port_I_sap_data : technology : string  
+virtualizer_I_port_I_sap_data : role : string  
+class "resources" as  virtualizer_I_port_I_sap_data_I_resources <<container>> 
+virtualizer_I_port_I_sap_data *-- "1" virtualizer_I_port_I_sap_data_I_resources 
+virtualizer_I_port_I_sap_data_I_resources : link-resource {uses} 
+class "control" as  virtualizer_I_port_I_control <<container>> 
+virtualizer_I_port_grouping *-- "1" virtualizer_I_port_I_control 
+virtualizer_I_port_I_control : controller : string  
+virtualizer_I_port_I_control : orchestrator : string  
+class "addresses" as  virtualizer_I_port_I_addresses <<container>> 
+virtualizer_I_port_grouping *-- "1" virtualizer_I_port_I_addresses 
+virtualizer_I_port_I_addresses : l2 : string  
+class "l3" as virtualizer_I_port_I_addresses_I_l3 << (L, #FF7700) list>> 
+virtualizer_I_port_I_addresses *-- "0..N" virtualizer_I_port_I_addresses_I_l3 
+virtualizer_I_port_I_addresses_I_l3 : l3-address {uses} 
+virtualizer_I_port_I_addresses : l4 : string  
+virtualizer_I_port_grouping : metadata {uses} 
+class "flowentry" as virtualizer_I_flowentry_grouping <<(G,Lime) grouping>> 
+virtualizer_I_flowentry_grouping : id-name {uses} 
+virtualizer_I_flowentry_grouping : priority : string  
+virtualizer_I_flowentry_grouping : port : string   {mandatory}
+virtualizer_I_flowentry_grouping : match : string   {mandatory}
+virtualizer_I_flowentry_grouping : action : string   {mandatory}
+virtualizer_I_flowentry_grouping : out : string  
+class "resources" as  virtualizer_I_flowentry_I_resources <<container>> 
+virtualizer_I_flowentry_grouping *-- "1" virtualizer_I_flowentry_I_resources 
+virtualizer_I_flowentry_I_resources : link-resource {uses} 
+class "constraints" as  virtualizer_I_flowentry_I_constraints <<container>> 
+virtualizer_I_flowentry_grouping *-- "1" virtualizer_I_flowentry_I_constraints 
+virtualizer_I_flowentry_I_constraints : constraints {uses} 
+class "flowtable" as virtualizer_I_flowtable_grouping <<(G,Lime) grouping>> 
+class "flowtable" as  virtualizer_I_flowtable_I_flowtable <<container>> 
+virtualizer_I_flowtable_grouping *-- "1" virtualizer_I_flowtable_I_flowtable 
+class "flowentry" as virtualizer_I_flowtable_I_flowtable_I_flowentry << (L, #FF7700) list>> 
+virtualizer_I_flowtable_I_flowtable *-- "0..N" virtualizer_I_flowtable_I_flowtable_I_flowentry 
+virtualizer_I_flowtable_I_flowtable_I_flowentry : flowentry {uses} 
+class "link" as virtualizer_I_link_grouping <<(G,Lime) grouping>> 
+virtualizer_I_link_grouping : id-name {uses} 
+virtualizer_I_link_grouping : src : string  
+virtualizer_I_link_grouping : dst : string  
+class "resources" as  virtualizer_I_link_I_resources <<container>> 
+virtualizer_I_link_grouping *-- "1" virtualizer_I_link_I_resources 
+virtualizer_I_link_I_resources : link-resource {uses} 
+class "links" as virtualizer_I_links_grouping <<(G,Lime) grouping>> 
+class "links" as  virtualizer_I_links_I_links <<container>> 
+virtualizer_I_links_grouping *-- "1" virtualizer_I_links_I_links 
+class "link" as virtualizer_I_links_I_links_I_link << (L, #FF7700) list>> 
+virtualizer_I_links_I_links *-- "0..N" virtualizer_I_links_I_links_I_link 
+virtualizer_I_links_I_links_I_link : link {uses} 
+class "software-resource" as virtualizer_I_software_resource_grouping <<(G,Lime) grouping>> 
+virtualizer_I_software_resource_grouping : cpu : string   {mandatory}
+virtualizer_I_software_resource_grouping : mem : string   {mandatory}
+virtualizer_I_software_resource_grouping : storage : string   {mandatory}
+virtualizer_I_software_resource_grouping : cost : string  
+virtualizer_I_software_resource_grouping : zone : string  
+class "node" as virtualizer_I_node_grouping <<(G,Lime) grouping>> 
+virtualizer_I_node_grouping : id-name-type {uses} 
+virtualizer_I_node_grouping : status : string  
+class "ports" as  virtualizer_I_node_I_ports <<container>> 
+virtualizer_I_node_grouping *-- "1" virtualizer_I_node_I_ports 
+class "port" as virtualizer_I_node_I_ports_I_port << (L, #FF7700) list>> 
+virtualizer_I_node_I_ports *-- "0..N" virtualizer_I_node_I_ports_I_port 
+virtualizer_I_node_I_ports_I_port : port {uses} 
+virtualizer_I_node_grouping : links {uses} 
+class "resources" as  virtualizer_I_node_I_resources <<container>> 
+virtualizer_I_node_grouping *-- "1" virtualizer_I_node_I_resources 
+virtualizer_I_node_I_resources : software-resource {uses} 
+virtualizer_I_node_grouping : connected : string  
+class "constraints" as  virtualizer_I_node_I_constraints <<container>> 
+virtualizer_I_node_grouping *-- "1" virtualizer_I_node_I_constraints 
+virtualizer_I_node_I_constraints : constraints {uses} 
+virtualizer_I_node_grouping : metadata {uses} 
+class "nodes" as virtualizer_I_nodes_grouping <<(G,Lime) grouping>> 
+class "node" as virtualizer_I_nodes_I_node << (L, #FF7700) list>> 
+virtualizer_I_nodes_grouping *-- "0..N" virtualizer_I_nodes_I_node 
+virtualizer_I_nodes_I_node : node {uses} 
+class "infra-node" as virtualizer_I_infra_node_grouping <<(G,Lime) grouping>> 
+virtualizer_I_infra_node_grouping : node {uses} 
+class "NF_instances" as  virtualizer_I_infra_node_I_NF_instances <<container>> 
+virtualizer_I_infra_node_grouping *-- "1" virtualizer_I_infra_node_I_NF_instances 
+virtualizer_I_infra_node_I_NF_instances : nodes {uses} 
+class "capabilities" as  virtualizer_I_infra_node_I_capabilities <<container>> 
+virtualizer_I_infra_node_grouping *-- "1" virtualizer_I_infra_node_I_capabilities 
+class "supported_NFs" as  virtualizer_I_infra_node_I_capabilities_I_supported_NFs <<container>> 
+virtualizer_I_infra_node_I_capabilities *-- "1" virtualizer_I_infra_node_I_capabilities_I_supported_NFs 
+virtualizer_I_infra_node_I_capabilities_I_supported_NFs : nodes {uses} 
+virtualizer_I_infra_node_grouping : flowtable {uses} 
+class "virtualizer" as virtualizer_I_virtualizer_grouping <<(G,Lime) grouping>> 
+virtualizer_I_virtualizer_grouping : id-name {uses} 
+class "nodes" as  virtualizer_I_virtualizer_I_nodes <<container>> 
+virtualizer_I_virtualizer_grouping *-- "1" virtualizer_I_virtualizer_I_nodes 
+class "node" as virtualizer_I_virtualizer_I_nodes_I_node << (L, #FF7700) list>> 
+virtualizer_I_virtualizer_I_nodes *-- "0..N" virtualizer_I_virtualizer_I_nodes_I_node 
+virtualizer_I_virtualizer_I_nodes_I_node : infra-node {uses} 
+virtualizer_I_virtualizer_grouping : links {uses} 
+virtualizer_I_virtualizer_grouping : metadata {uses} 
+class "virtualizer" as virtualizer_I_virtualizer << (L, #FF7700) list>> 
+virtualizer *-- "0..N" virtualizer_I_virtualizer 
+virtualizer_I_virtualizer : virtualizer {uses} 
+} 
+
+virtualizer_I_id_name_type_grouping --> virtualizer_I_id_name_grouping : uses 
+virtualizer_I_constraints_I_affinity --> virtualizer_I_object_grouping : uses 
+virtualizer_I_constraints_I_antiaffinity --> virtualizer_I_object_grouping : uses 
+virtualizer_I_constraints_I_variable --> virtualizer_I_object_grouping : uses 
+virtualizer_I_l3_address_grouping --> virtualizer_I_id_name_grouping : uses 
+virtualizer_I_port_grouping --> virtualizer_I_id_name_grouping : uses 
+virtualizer_I_port_I_sap_data_I_resources --> virtualizer_I_link_resource_grouping : uses 
+virtualizer_I_port_I_addresses_I_l3 --> virtualizer_I_l3_address_grouping : uses 
+virtualizer_I_port_grouping --> virtualizer_I_metadata_grouping : uses 
+virtualizer_I_flowentry_grouping --> virtualizer_I_id_name_grouping : uses 
+virtualizer_I_flowentry_I_resources --> virtualizer_I_link_resource_grouping : uses 
+virtualizer_I_flowentry_I_constraints --> virtualizer_I_constraints_grouping : uses 
+virtualizer_I_flowtable_I_flowtable_I_flowentry --> virtualizer_I_flowentry_grouping : uses 
+virtualizer_I_link_grouping --> virtualizer_I_id_name_grouping : uses 
+virtualizer_I_link_I_resources --> virtualizer_I_link_resource_grouping : uses 
+virtualizer_I_links_I_links_I_link --> virtualizer_I_link_grouping : uses 
+virtualizer_I_node_grouping --> virtualizer_I_id_name_type_grouping : uses 
+virtualizer_I_node_I_ports_I_port --> virtualizer_I_port_grouping : uses 
+virtualizer_I_node_grouping --> virtualizer_I_links_grouping : uses 
+virtualizer_I_node_I_resources --> virtualizer_I_software_resource_grouping : uses 
+virtualizer_I_node_I_constraints --> virtualizer_I_constraints_grouping : uses 
+virtualizer_I_node_grouping --> virtualizer_I_metadata_grouping : uses 
+virtualizer_I_nodes_I_node --> virtualizer_I_node_grouping : uses 
+virtualizer_I_infra_node_grouping --> virtualizer_I_node_grouping : uses 
+virtualizer_I_infra_node_I_NF_instances --> virtualizer_I_nodes_grouping : uses 
+virtualizer_I_infra_node_I_capabilities_I_supported_NFs --> virtualizer_I_nodes_grouping : uses 
+virtualizer_I_infra_node_grouping --> virtualizer_I_flowtable_grouping : uses 
+virtualizer_I_virtualizer_grouping --> virtualizer_I_id_name_grouping : uses 
+virtualizer_I_virtualizer_I_nodes_I_node --> virtualizer_I_infra_node_grouping : uses 
+virtualizer_I_virtualizer_grouping --> virtualizer_I_links_grouping : uses 
+virtualizer_I_virtualizer_grouping --> virtualizer_I_metadata_grouping : uses 
+virtualizer_I_virtualizer --> virtualizer_I_virtualizer_grouping : uses 
+center footer
+ <size:20> UML Generated : 2017-12-05 20:19 </size>
+ endfooter 
+@enduml 
