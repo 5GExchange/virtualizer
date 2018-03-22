@@ -299,6 +299,11 @@ class Yang(object):
         # self._leaf_attributes = list()
         self._floating = False  # get_path() will not return initial '/', i.e., only relative path is returned
 
+    def format(self, **kwargs):
+        for c in self._sorted_children:
+            if self.__dict__[c] is not None:
+                self.__dict__[c].format(**kwargs)
+
     # def __setattr__(self, key, value):
     #     """
     #     Calls set_value() for Leaf types so that they behave like string, int etc...
@@ -1840,6 +1845,21 @@ class StringLeaf(Leaf):
                 self.set_operation(e_data.attrib["operation"], recursive=False, force=True)
             root.remove(e_data)
 
+    def format(self, **kwargs):
+        if self.data is not None:
+            try:
+                self.data = self.data.format(**kwargs)
+            except:
+                try:
+                    _s = self.get_as_text()
+                    _f = _s.find('{')
+                    _l = _s.rfind('}')
+                    if _l > _f:
+                        _ss = _s[_f+1:_l]
+                        _ss = _ss.format(**kwargs)
+                        self.data = _s[0:_f+1] + _ss + _s[_l:len(_s)]
+                except:
+                    logger.warning("Cannot format string: {data}".format(data=self.data))
 
     def get_as_text(self, default=None):
         """
@@ -2659,6 +2679,9 @@ class ListYang(Yang):  # FIXME: to inherit from OrderedDict()
             setattr(result, k, copy.deepcopy(self.__dict__[k]))
         return result
 
+    def format(self, **kwargs):
+        for v in self._data.itervalues():
+            v.format(**kwargs)
 
     def __translate_and_merge__(self, translator, destination, path_caches=None, execute=False):
         """
