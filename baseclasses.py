@@ -1960,11 +1960,11 @@ class IntLeaf(Leaf):
             try:
                 value = int(value)
             except TypeError:
-                print "Cannot cast to integer!"
+                logger.error("Cannot cast to integer!")
         if self.check_range(value):
             self.data = value
         else:
-            print "Out of range!"
+            logger.error ("Out of range!")
 
     def check_range(self, value):
         """
@@ -2029,11 +2029,11 @@ class Decimal64Leaf(Leaf):
             try:
                 value = Decimal(value)
             except TypeError:
-                print "Cannot cast to Decimal!"
+                logger.error("Cannot cast to Decimal!")
         if self.check_range(value):
             self.data = value
         else:
-            print "Out of range!"
+            logger.error("Out of range!")
 
     def check_range(self, value):
         """
