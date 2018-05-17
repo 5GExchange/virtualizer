@@ -840,10 +840,11 @@ class Yang(object):
                     p.pop(0)
                     return self.create_path(source, path=p, target_copy_type=target_copy_type)
                 _p = PathUtils.path_to_list(self.get_path())
-                if p[0] == _p[1]:
-                    p.pop(0)
-                    return self.create_path(source, path=p, target_copy_type=target_copy_type)
-                raise ValueError("Root tag not found in walk_path()")
+                # if p[0] == _p[1]:
+                p.pop(0)
+                return self.create_path(source, path=p, target_copy_type=target_copy_type)
+
+                # raise ValueError("Root tag not found in walk_path()")
             if l == "..":
                 return self.get_parent().create_path(source, path=p, target_copy_type=target_copy_type)
             elif (l.find("[") > 0) and (l.find("]") > 0):
@@ -1959,11 +1960,11 @@ class IntLeaf(Leaf):
             try:
                 value = int(value)
             except TypeError:
-                print "Cannot cast to integer!"
+                logger.error("Cannot cast to integer!")
         if self.check_range(value):
             self.data = value
         else:
-            print "Out of range!"
+            logger.error ("Out of range!")
 
     def check_range(self, value):
         """
@@ -2028,11 +2029,11 @@ class Decimal64Leaf(Leaf):
             try:
                 value = Decimal(value)
             except TypeError:
-                print "Cannot cast to Decimal!"
+                logger.error("Cannot cast to Decimal!")
         if self.check_range(value):
             self.data = value
         else:
-            print "Out of range!"
+            logger.error("Out of range!")
 
     def check_range(self, value):
         """
