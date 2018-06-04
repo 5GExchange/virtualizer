@@ -513,7 +513,6 @@ class Yang(object):
         except:
             return False
 
-
     def get_parent(self, level=1, tag=None):
         """
         Returns the parent in the class subtree.
